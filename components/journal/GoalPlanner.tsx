@@ -81,9 +81,9 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
             </header>
 
             {/* AI Roadmap Generator */}
-            <section className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-900 dark:bg-indigo-900/20">
+            <section className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
                 <div className="flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 font-serif text-lg font-bold text-indigo-900 dark:text-indigo-200">
+                    <h3 className="flex items-center gap-2 font-serif text-lg font-bold text-indigo-900">
                         <Sparkles size={18} />
                         AI Roadmap
                     </h3>
@@ -97,7 +97,7 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
                 </div>
 
                 {isGenerating && (
-                    <div className="mt-4 animate-pulse text-sm text-indigo-700 dark:text-indigo-300">
+                    <div className="mt-4 animate-pulse text-sm text-indigo-700">
                         Analyzing your habits and past performance...
                     </div>
                 )}
@@ -106,9 +106,9 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mt-4 rounded bg-white p-3 text-sm text-stone-700 shadow-sm dark:bg-stone-800 dark:text-stone-300"
+                        className="mt-4 rounded bg-white p-3 text-sm text-stone-700 shadow-sm"
                     >
-                        <p className="font-bold text-indigo-600 dark:text-indigo-400">Suggestion:</p>
+                        <p className="font-bold text-indigo-600">Suggestion:</p>
                         {aiSuggestion}
                         <div className="mt-2 text-right">
                             <button
@@ -120,7 +120,7 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
                                     });
                                     setAiSuggestion(null);
                                 }}
-                                className="text-xs text-indigo-600 underline hover:text-indigo-800 dark:text-indigo-400"
+                                className="text-xs text-indigo-600 underline hover:text-indigo-800"
                             >
                                 Accept Goal
                             </button>
