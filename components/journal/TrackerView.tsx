@@ -12,9 +12,10 @@ interface TrackerViewProps {
     data: JournalData;
     onUpdateDay: (date: string, updates: Partial<DayLog>) => void;
     onAddHabit: (habit: Omit<HabitDefinition, 'id'>) => void;
+    paperColor?: string;
 }
 
-export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onAddHabit }: TrackerViewProps) {
+export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onAddHabit, paperColor = '#fefce8' }: TrackerViewProps) {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -102,10 +103,24 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                 <table className="w-full border-collapse text-sm">
                     <thead>
                         <tr>
-                            <th className="sticky top-0 z-10 w-12 border-b border-stone-300 bg-[#fefce8] p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700">Day</th>
-                            <th className="sticky top-0 z-10 border-b border-stone-300 bg-[#fefce8] p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700 min-w-[150px]">Topic / Highlight</th>
+                            <th
+                                className="sticky top-0 z-10 w-12 border-b border-stone-300 p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700"
+                                style={{ backgroundColor: paperColor }}
+                            >
+                                Day
+                            </th>
+                            <th
+                                className="sticky top-0 z-10 border-b border-stone-300 p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700 min-w-[150px]"
+                                style={{ backgroundColor: paperColor }}
+                            >
+                                Topic / Highlight
+                            </th>
                             {data.habits.map(habit => (
-                                <th key={habit.id} className="sticky top-0 z-10 w-20 border-b border-stone-300 bg-[#fefce8] p-2 text-center font-serif font-bold dark:bg-stone-800 dark:border-stone-700">
+                                <th
+                                    key={habit.id}
+                                    className="sticky top-0 z-10 w-20 border-b border-stone-300 p-2 text-center font-serif font-bold dark:bg-stone-800 dark:border-stone-700"
+                                    style={{ backgroundColor: paperColor }}
+                                >
                                     <div className="flex flex-col items-center">
                                         <span>{habit.name}</span>
                                         {habit.target && <span className="text-[10px] text-stone-400 font-normal">{habit.target}</span>}

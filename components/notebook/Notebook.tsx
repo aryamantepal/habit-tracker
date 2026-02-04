@@ -9,12 +9,16 @@ interface NotebookLayoutProps {
     leftPage: React.ReactNode;
     rightPage: React.ReactNode;
     className?: string;
+    paperColor?: string;
 }
 
-export function NotebookLayout({ leftPage, rightPage, className }: NotebookLayoutProps) {
+export function NotebookLayout({ leftPage, rightPage, className, paperColor = '#fefce8' }: NotebookLayoutProps) {
     return (
         <div className={twMerge("flex min-h-screen items-center justify-center bg-stone-200 p-4 dark:bg-stone-900", className)}>
-            <div className="relative flex h-[800px] w-full max-w-6xl overflow-hidden rounded-r-2xl rounded-l-md bg-[#fefce8] shadow-2xl dark:bg-stone-800">
+            <div
+                className="relative flex h-[800px] w-full max-w-6xl overflow-hidden rounded-r-2xl rounded-l-md shadow-2xl dark:bg-stone-800"
+                style={{ backgroundColor: paperColor }}
+            >
 
                 {/* Binder / Spine */}
                 <div className="absolute left-0 top-0 bottom-0 z-20 w-12 bg-gradient-to-r from-stone-800 to-stone-600 shadow-inner">

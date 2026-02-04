@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, Sparkles } from 'lucide-react';
-import { Goal } from '@/lib/types';
+import { Goal, PaperColor, PAPER_COLORS } from '@/lib/types';
 import { clsx } from 'clsx';
 
 interface GoalPlannerProps {
@@ -12,9 +12,11 @@ interface GoalPlannerProps {
     onToggleGoal: (id: string) => void;
     onDeleteGoal: (id: string) => void;
     onEditGoal: (id: string, newTitle: string) => void;
+    currentTheme: PaperColor;
+    onThemeChange: (color: PaperColor) => void;
 }
 
-export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEditGoal }: GoalPlannerProps) {
+export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEditGoal, currentTheme, onThemeChange }: GoalPlannerProps) {
     const [newGoalTitle, setNewGoalTitle] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
@@ -56,10 +58,26 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
 
     return (
         <div className="space-y-8">
-            <header className="mb-6 border-b border-stone-300 pb-2 dark:border-stone-700">
+            <header className="mb-6 border-b border-stone-300 pb-2 dark:border-stone-700 flex justify-between items-end">
                 <h2 className="font-serif text-3xl font-bold text-stone-800 dark:text-stone-100">
                     Monthly Goals
                 </h2>
+
+                {/* Theme Picker */}
+                <div className="flex gap-1">
+                    {PAPER_COLORS.map((color) => (
+                        <button
+                            key={color.name}
+                            onClick={() => onThemeChange(color.value)}
+                            className={clsx(
+                                "h-5 w-5 rounded-full border border-stone-300 shadow-sm transition-transform hover:scale-110",
+                                currentTheme === color.value && "ring-2 ring-stone-400 ring-offset-2"
+                            )}
+                            style={{ backgroundColor: color.value }}
+                            title={color.name}
+                        />
+                    ))}
+                </div>
             </header>
 
             {/* AI Roadmap Generator */}

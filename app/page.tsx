@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { NotebookLayout } from '@/components/notebook/Notebook';
 import { TrackerView } from '@/components/journal/TrackerView';
 import { GoalPlanner } from '@/components/journal/GoalPlanner';
-import { JournalData, DayLog, HabitDefinition, Goal } from '@/lib/types';
+import { JournalData, DayLog, HabitDefinition, Goal, PaperColor } from '@/lib/types';
 import { BookOpen } from 'lucide-react';
 
 // Mock Initial Data
@@ -24,6 +24,10 @@ export default function Home() {
 
   const handleMonthChange = (date: Date) => {
     setCurrentDate(date);
+  };
+
+  const handleThemeChange = (color: PaperColor) => {
+    setData(prev => ({ ...prev, themeColor: color }));
   };
 
   // Load from local storage on mount (MVP persistence)
@@ -123,6 +127,7 @@ export default function Home() {
         data={data}
         onUpdateDay={handleUpdateDay}
         onAddHabit={handleAddHabit}
+        paperColor={data.themeColor}
       />
     );
   };
@@ -139,6 +144,8 @@ export default function Home() {
         onToggleGoal={handleToggleGoal}
         onDeleteGoal={handleDeleteGoal}
         onEditGoal={handleEditGoal}
+        currentTheme={data.themeColor || '#fefce8'}
+        onThemeChange={handleThemeChange}
       />
     );
   };
@@ -148,6 +155,7 @@ export default function Home() {
       <NotebookLayout
         leftPage={renderLeftPage()}
         rightPage={renderRightPage()}
+        paperColor={data.themeColor}
       />
     </main>
   );
