@@ -107,7 +107,7 @@ export function DayDetail({ date, data, onUpdateDay, onAddHabit }: DayDetailProp
                         onChange={(e) => setNewHabitName(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === 'Enter' && newHabitName.trim()) {
-                                onAddHabit({ name: newHabitName.trim() });
+                                onAddHabit({ name: newHabitName.trim(), type: 'boolean' });
                                 setNewHabitName('');
                             }
                         }}
@@ -115,7 +115,7 @@ export function DayDetail({ date, data, onUpdateDay, onAddHabit }: DayDetailProp
                     <button
                         onClick={() => {
                             if (newHabitName.trim()) {
-                                onAddHabit({ name: newHabitName.trim() });
+                                onAddHabit({ name: newHabitName.trim(), type: 'boolean' });
                                 setNewHabitName('');
                             }
                         }}

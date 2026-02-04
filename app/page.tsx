@@ -92,6 +92,22 @@ export default function Home() {
     }));
   };
 
+  const handleDeleteGoal = (id: string) => {
+    setData(prev => ({
+      ...prev,
+      monthlyGoals: prev.monthlyGoals.filter(g => g.id !== id)
+    }));
+  };
+
+  const handleEditGoal = (id: string, newTitle: string) => {
+    setData(prev => ({
+      ...prev,
+      monthlyGoals: prev.monthlyGoals.map(g =>
+        g.id === id ? { ...g, title: newTitle } : g
+      )
+    }));
+  };
+
   // Left Page: Monthly Tracker Table
   const renderLeftPage = () => {
     return (
@@ -111,6 +127,8 @@ export default function Home() {
         goals={data.monthlyGoals}
         onAddGoal={handleAddGoal}
         onToggleGoal={handleToggleGoal}
+        onDeleteGoal={handleDeleteGoal}
+        onEditGoal={handleEditGoal}
       />
     );
   };

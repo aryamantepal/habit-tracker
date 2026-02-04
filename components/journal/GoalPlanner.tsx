@@ -10,12 +10,29 @@ interface GoalPlannerProps {
     goals: Goal[];
     onAddGoal: (goal: Omit<Goal, 'id' | 'completed'>) => void;
     onToggleGoal: (id: string) => void;
+    onDeleteGoal: (id: string) => void;
+    onEditGoal: (id: string, newTitle: string) => void;
 }
 
-export function GoalPlanner({ goals, onAddGoal, onToggleGoal }: GoalPlannerProps) {
+export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEditGoal }: GoalPlannerProps) {
     const [newGoalTitle, setNewGoalTitle] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
+    const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+
+    const startEditing = (goal: Goal) => {
+        setEditingGoalId(goal.id);
+        setEditTitle(goal.title);
+    };
+
+    const saveEdit = () => {
+        if (editingGoalId && editTitle.trim()) {
+            onEditGoal(editingGoalId, editTitle.trim());
+            setEditingGoalId(null);
+            setEditTitle('');
+        }
+    };
 
     const handleAddStart = () => {
         if (newGoalTitle.trim()) {
@@ -97,7 +114,7 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal }: GoalPlannerProps
             {/* Goal List */}
             <ul className="space-y-4">
                 {goals.map((goal) => (
-                    <li key={goal.id} className="flex items-start gap-3">
+                    <li key={goal.id} className="group flex items-start gap-3 relative">
                         <button
                             onClick={() => onToggleGoal(goal.id)}
                             className={clsx(
@@ -110,15 +127,43 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal }: GoalPlannerProps
                             {goal.completed && <Check size={14} />}
                         </button>
                         <div className="flex-1">
-                            <p className={clsx(
-                                "font-serif text-lg leading-tight",
-                                goal.completed ? "text-stone-400 line-through" : "text-stone-800 dark:text-stone-200"
-                            )}>
-                                {goal.title}
-                            </p>
+                            {editingGoalId === goal.id ? (
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    value={editTitle}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    onBlur={saveEdit}
+                                    onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                                    className="w-full bg-transparent font-serif text-lg leading-tight focus:outline-none border-b border-stone-400"
+                                />
+                            ) : (
+                                <p className={clsx(
+                                    "font-serif text-lg leading-tight",
+                                    goal.completed ? "text-stone-400 line-through" : "text-stone-800 dark:text-stone-200"
+                                )}>
+                                    {goal.title}
+                                </p>
+                            )}
                             {goal.description && (
                                 <p className="text-sm text-stone-500">{goal.description}</p>
                             )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                            <button
+                                onClick={() => startEditing(goal)}
+                                className="p-1 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                            </button>
+                            <button
+                                onClick={() => onDeleteGoal(goal.id)}
+                                className="p-1 text-stone-400 hover:text-red-500"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                            </button>
                         </div>
                     </li>
                 ))}
