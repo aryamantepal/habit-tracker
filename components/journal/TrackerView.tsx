@@ -102,10 +102,10 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                 <table className="w-full border-collapse text-sm">
                     <thead>
                         <tr>
-                            <th className="sticky top-0 z-10 w-12 border-b border-stone-300 bg-[#fdfbf7] p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700">Day</th>
-                            <th className="sticky top-0 z-10 border-b border-stone-300 bg-[#fdfbf7] p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700 min-w-[150px]">Topic / Highlight</th>
+                            <th className="sticky top-0 z-10 w-12 border-b border-stone-300 bg-[#fefce8] p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700">Day</th>
+                            <th className="sticky top-0 z-10 border-b border-stone-300 bg-[#fefce8] p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700 min-w-[150px]">Topic / Highlight</th>
                             {data.habits.map(habit => (
-                                <th key={habit.id} className="sticky top-0 z-10 w-20 border-b border-stone-300 bg-[#fdfbf7] p-2 text-center font-serif font-bold dark:bg-stone-800 dark:border-stone-700">
+                                <th key={habit.id} className="sticky top-0 z-10 w-20 border-b border-stone-300 bg-[#fefce8] p-2 text-center font-serif font-bold dark:bg-stone-800 dark:border-stone-700">
                                     <div className="flex flex-col items-center">
                                         <span>{habit.name}</span>
                                         {habit.target && <span className="text-[10px] text-stone-400 font-normal">{habit.target}</span>}
