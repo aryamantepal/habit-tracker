@@ -3,6 +3,8 @@ export type HabitDefinition = {
     name: string;
     category?: string; // e.g., "Health", "Learning"
     color?: string;
+    type: 'boolean' | 'number' | 'text';
+    target?: string; // e.g. "10 pages", "30 mins"
 };
 
 export type ProductivityBlock = {
@@ -14,7 +16,8 @@ export type ProductivityBlock = {
 
 export type DayLog = {
     date: string; // YYYY-MM-DD
-    habitsCompleted: string[]; // IDs of completed habits
+    habitsCompleted: string[]; // IDs of completed habits (backwards compat)
+    habitValues?: Record<string, string | number | boolean>; // id -> value
     productivity: ProductivityBlock[];
     highlight: string;
     reflection: string;
