@@ -27,8 +27,8 @@ export function MonthGrid({ currentDate, onSelectDay, data }: MonthGridProps) {
             </header>
 
             <div className="grid grid-cols-7 gap-4">
-                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day) => (
-                    <div key={day} className="text-center font-serif text-sm font-bold text-stone-400">
+                {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, i) => (
+                    <div key={`${day}-${i}`} className="text-center font-serif text-sm font-bold text-stone-400">
                         {day}
                     </div>
                 ))}
