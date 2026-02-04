@@ -1,19 +1,20 @@
 'use client';
 
 import React, { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths } from 'date-fns';
 import { clsx } from 'clsx';
-import { Check, Plus, X } from 'lucide-react';
+import { Check, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { JournalData, DayLog, HabitDefinition } from '@/lib/types';
 
 interface TrackerViewProps {
     currentDate: Date;
+    onMonthChange: (date: Date) => void;
     data: JournalData;
     onUpdateDay: (date: string, updates: Partial<DayLog>) => void;
     onAddHabit: (habit: Omit<HabitDefinition, 'id'>) => void;
 }
 
-export function TrackerView({ currentDate, data, onUpdateDay, onAddHabit }: TrackerViewProps) {
+export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onAddHabit }: TrackerViewProps) {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -53,9 +54,25 @@ export function TrackerView({ currentDate, data, onUpdateDay, onAddHabit }: Trac
     return (
         <div className="h-full flex flex-col">
             <header className="mb-4 flex items-baseline justify-between border-b border-stone-300 pb-2 dark:border-stone-700">
-                <h2 className="font-serif text-2xl font-bold text-stone-800 dark:text-stone-100">
-                    {format(currentDate, 'MMMM yyyy')}
-                </h2>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => onMonthChange(subMonths(currentDate, 1))}
+                            className="rounded-full p-1 hover:bg-stone-200 dark:hover:bg-stone-700"
+                        >
+                            <ChevronLeft size={20} />
+                        </button>
+                        <h2 className="font-serif text-2xl font-bold text-stone-800 dark:text-stone-100">
+                            {format(currentDate, 'MMMM yyyy')}
+                        </h2>
+                        <button
+                            onClick={() => onMonthChange(addMonths(currentDate, 1))}
+                            className="rounded-full p-1 hover:bg-stone-200 dark:hover:bg-stone-700"
+                        >
+                            <ChevronRight size={20} />
+                        </button>
+                    </div>
+                </div>
                 {/* Simple Habit Adder */}
                 <div className="flex items-center gap-2">
                     <input

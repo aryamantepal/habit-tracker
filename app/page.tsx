@@ -22,6 +22,10 @@ export default function Home() {
   const [data, setData] = useState<JournalData>(INITIAL_DATA);
   const [currentDate, setCurrentDate] = useState(new Date());
 
+  const handleMonthChange = (date: Date) => {
+    setCurrentDate(date);
+  };
+
   // Load from local storage on mount (MVP persistence)
   useEffect(() => {
     const saved = localStorage.getItem('journalData');
@@ -77,9 +81,11 @@ export default function Home() {
   };
 
   const handleAddGoal = (goal: Omit<Goal, 'id' | 'completed'>) => {
+    // Override the mock month with the currently viewed month
+    const currentMonthStr = currentDate.toISOString().slice(0, 7); // YYYY-MM
     setData(prev => ({
       ...prev,
-      monthlyGoals: [...prev.monthlyGoals, { ...goal, id: crypto.randomUUID(), completed: false }]
+      monthlyGoals: [...prev.monthlyGoals, { ...goal, id: crypto.randomUUID(), completed: false, month: currentMonthStr }]
     }));
   };
 
@@ -113,6 +119,7 @@ export default function Home() {
     return (
       <TrackerView
         currentDate={currentDate}
+        onMonthChange={handleMonthChange}
         data={data}
         onUpdateDay={handleUpdateDay}
         onAddHabit={handleAddHabit}
@@ -122,9 +129,12 @@ export default function Home() {
 
   // Right Page: Monthly Goals
   const renderRightPage = () => {
+    const currentMonthStr = currentDate.toISOString().slice(0, 7);
+    const visibleGoals = data.monthlyGoals.filter(g => g.month === currentMonthStr || !g.month); // !g.month for backwards compat
+
     return (
       <GoalPlanner
-        goals={data.monthlyGoals}
+        goals={visibleGoals}
         onAddGoal={handleAddGoal}
         onToggleGoal={handleToggleGoal}
         onDeleteGoal={handleDeleteGoal}
