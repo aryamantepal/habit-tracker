@@ -54,23 +54,23 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
 
     return (
         <div className="h-full flex flex-col">
-            <header className="mb-4 flex items-baseline justify-between border-b border-stone-300 pb-2 dark:border-stone-700">
+            <header className="mb-4 flex items-baseline justify-between border-b border-stone-900/10 pb-2">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => onMonthChange(subMonths(currentDate, 1))}
-                            className="rounded-full p-1 hover:bg-stone-200 dark:hover:bg-stone-700"
+                            className="rounded-full p-1 hover:bg-stone-900/5"
                         >
-                            <ChevronLeft size={20} />
+                            <ChevronLeft size={20} className="text-stone-700" />
                         </button>
-                        <h2 className="font-serif text-2xl font-bold text-stone-800 dark:text-stone-100">
+                        <h2 className="font-serif text-2xl font-bold text-stone-900">
                             {format(currentDate, 'MMMM yyyy')}
                         </h2>
                         <button
                             onClick={() => onMonthChange(addMonths(currentDate, 1))}
-                            className="rounded-full p-1 hover:bg-stone-200 dark:hover:bg-stone-700"
+                            className="rounded-full p-1 hover:bg-stone-900/5"
                         >
-                            <ChevronRight size={20} />
+                            <ChevronRight size={20} className="text-stone-700" />
                         </button>
                     </div>
                 </div>
@@ -104,13 +104,13 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                     <thead>
                         <tr>
                             <th
-                                className="sticky top-0 z-10 w-12 border-b border-stone-300 p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700"
+                                className="sticky top-0 z-10 w-12 border-b border-stone-900/20 p-2 text-left font-serif font-bold text-stone-800"
                                 style={{ backgroundColor: paperColor }}
                             >
                                 Day
                             </th>
                             <th
-                                className="sticky top-0 z-10 border-b border-stone-300 p-2 text-left font-serif font-bold dark:bg-stone-800 dark:border-stone-700 min-w-[150px]"
+                                className="sticky top-0 z-10 border-b border-stone-900/20 p-2 text-left font-serif font-bold text-stone-800 min-w-[150px]"
                                 style={{ backgroundColor: paperColor }}
                             >
                                 Topic / Highlight
@@ -118,12 +118,12 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                             {data.habits.map(habit => (
                                 <th
                                     key={habit.id}
-                                    className="sticky top-0 z-10 w-20 border-b border-stone-300 p-2 text-center font-serif font-bold dark:bg-stone-800 dark:border-stone-700"
+                                    className="sticky top-0 z-10 w-20 border-b border-stone-900/20 p-2 text-center font-serif font-bold text-stone-800"
                                     style={{ backgroundColor: paperColor }}
                                 >
                                     <div className="flex flex-col items-center">
                                         <span>{habit.name}</span>
-                                        {habit.target && <span className="text-[10px] text-stone-400 font-normal">{habit.target}</span>}
+                                        {habit.target && <span className="text-[10px] text-stone-500 font-normal">{habit.target}</span>}
                                     </div>
                                 </th>
                             ))}
@@ -144,7 +144,7 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                                     <td className="border-b border-stone-200 p-1 dark:border-stone-800">
                                         <input
                                             type="text"
-                                            className="w-full bg-transparent px-1 py-0.5 text-stone-700 focus:outline-none dark:text-stone-300"
+                                            className="w-full bg-transparent px-1 py-0.5 text-stone-900 focus:outline-none"
                                             defaultValue={highlight}
                                             onBlur={(e) => handleTopicBlur(dateKey, e.target.value)}
                                         />
@@ -163,8 +163,8 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                                                         className={clsx(
                                                             "mx-auto flex h-5 w-5 items-center justify-center rounded-full border transition-all",
                                                             displayValue
-                                                                ? "border-stone-800 bg-stone-800 text-white dark:border-stone-200 dark:bg-stone-200 dark:text-stone-900"
-                                                                : "border-stone-300 group-hover:border-stone-400 dark:border-stone-700"
+                                                                ? "border-stone-800 bg-stone-800 text-white"
+                                                                : "border-stone-300 group-hover:border-stone-400"
                                                         )}
                                                     >
                                                         {displayValue && <Check size={12} />}

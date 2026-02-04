@@ -34,7 +34,7 @@ export function NotebookLayout({ leftPage, rightPage, className, paperColor = '#
                 <div className="pointer-events-none absolute inset-0 z-10 bg-[url('https://www.transparenttextures.com/patterns/paper.png')] opacity-30 mix-blend-multiply" />
 
                 {/* Left Page */}
-                <div className="relative z-0 flex w-1/2 flex-col border-r border-stone-300 px-8 py-10 pl-20 text-stone-800 dark:border-stone-700 dark:text-stone-200">
+                <div className="relative z-0 flex w-1/2 flex-col border-r border-stone-300 px-8 py-10 pl-20 text-stone-900 border-opacity-20 dark:border-stone-700/20">
                     <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
                         {leftPage}
                     </div>
@@ -45,7 +45,7 @@ export function NotebookLayout({ leftPage, rightPage, className, paperColor = '#
                 </div>
 
                 {/* Right Page */}
-                <div className="relative z-0 flex w-1/2 flex-col px-8 py-10 text-stone-800 dark:text-stone-200">
+                <div className="relative z-0 flex w-1/2 flex-col px-8 py-10 text-stone-900">
                     <div className="h-full overflow-y-auto pr-2 custom-scrollbar">
                         {rightPage}
                     </div>

@@ -58,8 +58,8 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
 
     return (
         <div className="space-y-8">
-            <header className="mb-6 border-b border-stone-300 pb-2 dark:border-stone-700 flex justify-between items-end">
-                <h2 className="font-serif text-3xl font-bold text-stone-800 dark:text-stone-100">
+            <header className="mb-6 border-b border-stone-900/10 pb-2 flex justify-between items-end">
+                <h2 className="font-serif text-3xl font-bold text-stone-900">
                     Monthly Goals
                 </h2>
 
@@ -138,8 +138,8 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
                             className={clsx(
                                 "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all",
                                 goal.completed
-                                    ? "border-stone-800 bg-stone-800 text-white dark:border-stone-200 dark:bg-stone-200 dark:text-stone-900"
-                                    : "border-stone-400 hover:border-stone-600 dark:border-stone-600"
+                                    ? "border-stone-800 bg-stone-800 text-white"
+                                    : "border-stone-400 hover:border-stone-600"
                             )}
                         >
                             {goal.completed && <Check size={14} />}
@@ -153,12 +153,12 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
                                     onChange={(e) => setEditTitle(e.target.value)}
                                     onBlur={saveEdit}
                                     onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                                    className="w-full bg-transparent font-serif text-lg leading-tight focus:outline-none border-b border-stone-400"
+                                    className="w-full bg-transparent font-serif text-lg leading-tight focus:outline-none border-b border-stone-400 text-stone-900"
                                 />
                             ) : (
                                 <p className={clsx(
                                     "font-serif text-lg leading-tight",
-                                    goal.completed ? "text-stone-400 line-through" : "text-stone-800 dark:text-stone-200"
+                                    goal.completed ? "text-stone-500 line-through" : "text-stone-900"
                                 )}>
                                     {goal.title}
                                 </p>
@@ -200,11 +200,11 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
                     onChange={(e) => setNewGoalTitle(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAddStart()}
                     placeholder="New Goal..."
-                    className="flex-1 rounded-md border border-stone-300 bg-transparent px-3 py-2 font-serif text-stone-800 focus:border-stone-500 focus:outline-none dark:border-stone-600 dark:text-stone-200"
+                    className="flex-1 rounded-md border border-stone-300 bg-transparent px-3 py-2 font-serif text-stone-900 focus:border-stone-500 focus:outline-none"
                 />
                 <button
                     onClick={handleAddStart}
-                    className="rounded-full bg-stone-800 p-2 text-white hover:bg-stone-700 dark:bg-stone-200 dark:text-stone-900"
+                    className="rounded-full bg-stone-800 p-2 text-white hover:bg-stone-700"
                 >
                     <Plus size={20} />
                 </button>
