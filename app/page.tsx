@@ -44,6 +44,29 @@ export default function Home() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const handleMonthChange = (date: Date) => {
+    setCurrentDate(date);
+  };
+
+  const handleThemeChange = (color: PaperColor) => {
+    setData(prev => ({ ...prev, themeColor: color }));
+  };
+
+  // Fetch from Supabase on session change
+  useEffect(() => {
+    if (session?.user) {
+      setLoading(true);
+      fetchJournalData(session.user.id).then(fetchedData => {
+        if (fetchedData.habits.length === 0 && Object.keys(fetchedData.days).length === 0) {
+          setData({ ...fetchedData, habits: INITIAL_DATA.habits });
+        } else {
+          setData(fetchedData);
+        }
+        setLoading(false);
+      });
+    }
+  }, [session]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-stone-100">
@@ -55,63 +78,6 @@ export default function Home() {
   if (!session) {
     return <Auth />;
   }
-
-  const handleMonthChange = (date: Date) => {
-    setCurrentDate(date);
-  };
-
-  const handleThemeChange = (color: PaperColor) => {
-    setData(prev => ({ ...prev, themeColor: color }));
-  };
-
-  // Load from local storage on mount (MVP persistence)
-  useEffect(() => {
-    const saved = localStorage.getItem('journalData');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Ensure habits have types if loaded from old data
-        const safeHabits = parsed.habits.map((h: any) => ({
-          ...h,
-          type: h.type || 'boolean'
-        }));
-        setData({ ...parsed, habits: safeHabits });
-      } catch (e) {
-        console.error("Failed to load journal data", e);
-      }
-    }
-  }, []);
-
-  // Fetch from Supabase on session change
-  useEffect(() => {
-    if (session?.user) {
-      setLoading(true);
-      fetchJournalData(session.user.id).then(fetchedData => {
-        // Merge fetched data? For now, just replace.
-        // If it's a new user, fetchedData might be empty. 
-        // We should start with initial data if empty but only for Habits? 
-        // Actually, let's just use what's in DB.
-
-        // If DB has no habits, maybe we want to keep the mock ones for onboarding?
-        // Let's decide: If 0 habits, use INITIAL_DATA (and we should save them to DB potentially? or just let user create them).
-        // For 'Rich Aesthetics' and user experience, seeing an empty state is sad.
-        // But for now let's just use fetched data.
-
-        // We need to preserve the theme preference too if we stored it?
-        // For now, if no habits, merge INITIAL_DATA habits but keep them local until saved?
-        // Simpler: Just set data.
-        if (fetchedData.habits.length === 0 && Object.keys(fetchedData.days).length === 0) {
-          // New user or empty DB. 
-          // We could optionally persist the Default Habits to DB here so they persist.
-          // For now, let's just show them locally so the UI isn't empty.
-          setData({ ...fetchedData, habits: INITIAL_DATA.habits });
-        } else {
-          setData(fetchedData);
-        }
-        setLoading(false);
-      });
-    }
-  }, [session]);
 
   const handleUpdateDay = async (dateKey: string, updates: Partial<DayLog>) => {
     // Optimistic Update
