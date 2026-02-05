@@ -12,16 +12,20 @@ interface TrackerViewProps {
     data: JournalData;
     onUpdateDay: (date: string, updates: Partial<DayLog>) => void;
     onAddHabit: (habit: Omit<HabitDefinition, 'id'>) => void;
+    onUpdateHabit: (id: string, updates: Partial<HabitDefinition>) => void;
+    onDeleteHabit: (id: string) => void;
     paperColor?: string;
 }
 
-export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onAddHabit, paperColor = '#fefce8' }: TrackerViewProps) {
+export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onAddHabit, onUpdateHabit, onDeleteHabit, paperColor = '#fefce8' }: TrackerViewProps) {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
     const [newHabitName, setNewHabitName] = useState('');
     const [newHabitType, setNewHabitType] = useState<'boolean' | 'number'>('boolean');
+    const [editingHabit, setEditingHabit] = useState<string | null>(null);
+    const [editName, setEditName] = useState('');
 
     const handleValueChange = (dateKey: string, habitId: string, value: any) => {
         // Retrieve existing day data or create fresh
@@ -53,6 +57,18 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
         onUpdateDay(dateKey, { highlight: text });
     }
 
+    const startEditing = (habit: HabitDefinition) => {
+        setEditingHabit(habit.id);
+        setEditName(habit.name);
+    }
+
+    const saveEditing = (id: string) => {
+        if (editName.trim()) {
+            onUpdateHabit(id, { name: editName.trim() });
+        }
+        setEditingHabit(null);
+    }
+
     return (
         <div className="h-full flex flex-col">
             <header className="mb-4 flex items-baseline justify-between border-b border-stone-900/10 pb-2">
@@ -75,7 +91,6 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                         </button>
                     </div>
                 </div>
-                {/* Simple Habit Adder */}
                 {/* Simple Habit Adder */}
                 <div className="flex items-center gap-2">
                     <input
@@ -138,12 +153,41 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                             {data.habits.map(habit => (
                                 <th
                                     key={habit.id}
-                                    className="sticky top-0 z-10 w-20 border-b border-stone-900/20 p-2 text-center font-serif font-bold text-stone-800"
+                                    className="sticky top-0 z-10 w-20 border-b border-stone-900/20 p-2 text-center font-serif font-bold text-stone-800 group relative"
                                     style={{ backgroundColor: paperColor }}
                                 >
                                     <div className="flex flex-col items-center">
-                                        <span>{habit.name}</span>
+                                        {editingHabit === habit.id ? (
+                                            <input
+                                                autoFocus
+                                                className="w-full bg-transparent text-center border-b border-stone-500 focus:outline-none"
+                                                value={editName}
+                                                onChange={e => setEditName(e.target.value)}
+                                                onBlur={() => saveEditing(habit.id)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') saveEditing(habit.id);
+                                                }}
+                                            />
+                                        ) : (
+                                            <span
+                                                className="cursor-pointer hover:underline"
+                                                onDoubleClick={() => startEditing(habit)}
+                                            >
+                                                {habit.name}
+                                            </span>
+                                        )}
                                         {habit.target && <span className="text-[10px] text-stone-500 font-normal">{habit.target}</span>}
+
+                                        {/* Hover Actions */}
+                                        <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col bg-white/80 rounded shadow-sm">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); if (confirm('Delete ' + habit.name + '?')) onDeleteHabit(habit.id); }}
+                                                className="p-1 hover:text-red-600 text-stone-400"
+                                                title="Delete Habit"
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        </div>
                                     </div>
                                 </th>
                             ))}

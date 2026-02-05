@@ -81,6 +81,29 @@ export const createHabit = async (habit: HabitDefinition, userId: string) => {
     return data;
 };
 
+export const updateHabit = async (habitId: string, updates: Partial<HabitDefinition>, userId: string) => {
+    const { data, error } = await supabase
+        .from('habits')
+        .update(updates)
+        .eq('id', habitId)
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+    if (error) console.error('Error updating habit:', error);
+    return data;
+};
+
+export const deleteHabit = async (habitId: string, userId: string) => {
+    const { error } = await supabase
+        .from('habits')
+        .delete()
+        .eq('id', habitId)
+        .eq('user_id', userId);
+
+    if (error) console.error('Error deleting habit:', error);
+};
+
 export const updateDayLog = async (date: string, updates: Partial<DayLog>, userId: string) => {
     // We need to handle upsert carefully.
     // First, try to find if it exists is not needed if we use upsert with unique constraint (user_id, date).

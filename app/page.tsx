@@ -9,7 +9,8 @@ import { BookOpen, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import Auth from '@/components/auth/Auth';
 import { Session } from '@supabase/supabase-js';
-import { fetchJournalData, createHabit, updateDayLog, createGoal, updateGoal, deleteGoal } from '@/lib/api';
+import { fetchJournalData, createHabit, updateDayLog, createGoal, updateGoal, deleteGoal, updateHabit, deleteHabit } from '@/lib/api';
+
 
 
 // Mock Initial Data
@@ -196,6 +197,32 @@ export default function Home() {
     }
   };
 
+  const handleUpdateHabit = async (id: string, updates: Partial<HabitDefinition>) => {
+    // Optimistic
+    setData(prev => ({
+      ...prev,
+      habits: prev.habits.map(h => h.id === id ? { ...h, ...updates } : h)
+    }));
+
+    // DB
+    if (session?.user) {
+      await updateHabit(id, updates, session.user.id);
+    }
+  }
+
+  const handleDeleteHabit = async (id: string) => {
+    // Optimistic
+    setData(prev => ({
+      ...prev,
+      habits: prev.habits.filter(h => h.id !== id)
+    }));
+
+    // DB
+    if (session?.user) {
+      await deleteHabit(id, session.user.id);
+    }
+  }
+
   // Left Page: Monthly Tracker Table
   const renderLeftPage = () => {
     return (
@@ -205,6 +232,8 @@ export default function Home() {
         data={data}
         onUpdateDay={handleUpdateDay}
         onAddHabit={handleAddHabit}
+        onUpdateHabit={handleUpdateHabit}
+        onDeleteHabit={handleDeleteHabit}
         paperColor={data.themeColor}
       />
     );
