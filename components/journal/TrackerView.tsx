@@ -21,6 +21,7 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
     const [newHabitName, setNewHabitName] = useState('');
+    const [newHabitType, setNewHabitType] = useState<'boolean' | 'number'>('boolean');
 
     const handleValueChange = (dateKey: string, habitId: string, value: any) => {
         // Retrieve existing day data or create fresh
@@ -75,6 +76,7 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                     </div>
                 </div>
                 {/* Simple Habit Adder */}
+                {/* Simple Habit Adder */}
                 <div className="flex items-center gap-2">
                     <input
                         className="w-32 rounded border border-stone-300 bg-transparent px-2 py-1 text-xs focus:outline-none dark:border-stone-600"
@@ -83,14 +85,32 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                         onChange={e => setNewHabitName(e.target.value)}
                         onKeyDown={e => {
                             if (e.key === 'Enter' && newHabitName.trim()) {
-                                onAddHabit({ name: newHabitName.trim(), type: 'boolean' });
+                                onAddHabit({
+                                    name: newHabitName.trim(),
+                                    type: newHabitType,
+                                    category: 'General',
+                                    color: 'stone'
+                                });
                                 setNewHabitName('');
                             }
                         }}
                     />
+                    <select
+                        value={newHabitType}
+                        onChange={(e) => setNewHabitType(e.target.value as 'boolean' | 'number')}
+                        className="rounded border border-stone-300 bg-transparent px-2 py-1 text-xs focus:outline-none dark:border-stone-600"
+                    >
+                        <option value="boolean">Checkbox</option>
+                        <option value="number">Number</option>
+                    </select>
                     <button onClick={() => {
                         if (newHabitName.trim()) {
-                            onAddHabit({ name: newHabitName.trim(), type: 'boolean' });
+                            onAddHabit({
+                                name: newHabitName.trim(),
+                                type: newHabitType,
+                                category: 'General',
+                                color: 'stone'
+                            });
                             setNewHabitName('');
                         }
                     }}>
