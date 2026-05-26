@@ -4,8 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { NotebookLayout } from '@/components/notebook/Notebook';
 import { TrackerView } from '@/components/journal/TrackerView';
 import { GoalPlanner } from '@/components/journal/GoalPlanner';
-import { JournalData, DayLog, HabitDefinition, Goal, PaperColor } from '@/lib/types';
-import { BookOpen, LogOut } from 'lucide-react';
+import { JournalData, DayLog, HabitDefinition, Goal } from '@/lib/types';
+import { LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import Auth from '@/components/auth/Auth';
 import { Session } from '@supabase/supabase-js';
@@ -49,9 +49,7 @@ export default function Home() {
     setCurrentDate(date);
   };
 
-  const handleThemeChange = (color: PaperColor) => {
-    setData(prev => ({ ...prev, themeColor: color }));
-  };
+
 
   // Fetch from Supabase on session change
   useEffect(() => {
@@ -86,10 +84,7 @@ export default function Home() {
       const existing = prev.days[dateKey] || {
         date: dateKey,
         habitsCompleted: [],
-        habitValues: {},
-        highlight: '',
-        reflection: '',
-        productivity: []
+        habitValues: {}
       };
 
       const updatedDay = { ...existing, ...updates };
@@ -106,14 +101,6 @@ export default function Home() {
 
     // DB Update
     if (session?.user) {
-      // We need to pass the FULL merged day object or just the updates?
-      // The API `updateDayLog` takes partial updates, but merging logic is simpler if we pass what we have.
-      // Actually, our API helper expects specific fields.
-      // Let's pass the updates. But wait, `updateDayLog` builds the payload from updates.
-      // If 'habitsCompleted' is in updates, it overwrites.
-      // So we need to be careful. The `updates` argument here comes from `TrackerView`.
-      // Usually `TrackerView` sends the *new* value for connection.
-      // Let's look at `TrackerView` logic later. Assuming `updates` contains the *new desired state* for that field.
       await updateDayLog(dateKey, updates, session.user.id);
     }
   };
@@ -234,7 +221,6 @@ export default function Home() {
         onAddHabit={handleAddHabit}
         onUpdateHabit={handleUpdateHabit}
         onDeleteHabit={handleDeleteHabit}
-        paperColor={data.themeColor}
       />
     );
   };
@@ -251,8 +237,6 @@ export default function Home() {
         onToggleGoal={handleToggleGoal}
         onDeleteGoal={handleDeleteGoal}
         onEditGoal={handleEditGoal}
-        currentTheme={data.themeColor || '#fefce8'}
-        onThemeChange={handleThemeChange}
       />
     );
   };
@@ -270,7 +254,6 @@ export default function Home() {
       <NotebookLayout
         leftPage={renderLeftPage()}
         rightPage={renderRightPage()}
-        paperColor={data.themeColor}
       />
     </main>
   );

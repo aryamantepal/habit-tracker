@@ -27,24 +27,7 @@ export const fetchJournalData = async (userId: string): Promise<JournalData> => 
             date: log.date,
             habitsCompleted: log.habits_completed || [],
             habitValues: log.habit_values || {},
-            highlight: log.highlight || '',
-            reflection: log.reflection || '',
-            productivity: log.productivity || [],
-            // Ensure we keep the existing structure if needed, but db uses snake_case sometimes? 
-            // Fortunately we selected '*' and our JS client maps jsonb/text[] well.
-            // But we need to make sure property names match `DayLog` type.
-            // The DB column `habits_completed` maps to `habitsCompleted`? No, Supabase returns column names.
-            // We need to map manually if names differ.
-            // Our Table Schema: habits_completed, habit_values, highlight, reflection, productivity
-            // Our Type: habitsCompleted, habitValues, ...
         };
-
-        // Manual mapping fixes
-        // @ts-ignore
-        daysMap[log.date].habitValues = log.habit_values;
-        // Productivity mismatch: DB has int[], App has ProductivityBlock[].
-        // Since UI doesn't use it yet, we just default to empty array to satisfy type.
-        daysMap[log.date].productivity = [];
     });
 
     return {
@@ -57,8 +40,7 @@ export const fetchJournalData = async (userId: string): Promise<JournalData> => 
         monthlyGoals: (goals as any[] || []).map(g => ({
             ...g,
             // 'completed', 'month', 'title' are same.
-        })),
-        themeColor: '#fefce8' // Default PaperColor
+        }))
     };
 };
 
@@ -117,9 +99,6 @@ export const updateDayLog = async (date: string, updates: Partial<DayLog>, userI
 
     if (updates.habitsCompleted !== undefined) dbPayload.habits_completed = updates.habitsCompleted;
     if (updates.habitValues !== undefined) dbPayload.habit_values = updates.habitValues;
-    if (updates.highlight !== undefined) dbPayload.highlight = updates.highlight;
-    if (updates.reflection !== undefined) dbPayload.reflection = updates.reflection;
-    if (updates.productivity !== undefined) dbPayload.productivity = updates.productivity;
 
     const { data, error } = await supabase
         .from('day_logs')

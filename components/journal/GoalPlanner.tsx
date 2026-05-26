@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Plus, Sparkles } from 'lucide-react';
-import { Goal, PaperColor, PAPER_COLORS } from '@/lib/types';
+import { Plus } from 'lucide-react';
+import { Goal } from '@/lib/types';
 import { clsx } from 'clsx';
 
 interface GoalPlannerProps {
@@ -12,14 +11,10 @@ interface GoalPlannerProps {
     onToggleGoal: (id: string) => void;
     onDeleteGoal: (id: string) => void;
     onEditGoal: (id: string, newTitle: string) => void;
-    currentTheme: PaperColor;
-    onThemeChange: (color: PaperColor) => void;
 }
 
-export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEditGoal, currentTheme, onThemeChange }: GoalPlannerProps) {
+export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEditGoal }: GoalPlannerProps) {
     const [newGoalTitle, setNewGoalTitle] = useState('');
-    const [isGenerating, setIsGenerating] = useState(false);
-    const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
     const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
     const [editTitle, setEditTitle] = useState('');
 
@@ -47,14 +42,6 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
         }
     };
 
-    const generateAiRoadmap = () => {
-        setIsGenerating(true);
-        // Mock AI delay
-        setTimeout(() => {
-            setIsGenerating(false);
-            setAiSuggestion("Based on your habits, try aiming for consistent 30-minute reading sessions 3x a week to improve focus.");
-        }, 2000);
-    };
 
     return (
         <div className="space-y-8">
@@ -62,72 +49,7 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
                 <h2 className="font-serif text-3xl font-bold text-stone-900">
                     Monthly Goals
                 </h2>
-
-                {/* Theme Picker */}
-                <div className="flex gap-1">
-                    {PAPER_COLORS.map((color) => (
-                        <button
-                            key={color.name}
-                            onClick={() => onThemeChange(color.value)}
-                            className={clsx(
-                                "h-5 w-5 rounded-full border border-stone-300 shadow-sm transition-transform hover:scale-110",
-                                currentTheme === color.value && "ring-2 ring-stone-400 ring-offset-2"
-                            )}
-                            style={{ backgroundColor: color.value }}
-                            title={color.name}
-                        />
-                    ))}
-                </div>
             </header>
-
-            {/* AI Roadmap Generator */}
-            <section className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="flex items-center gap-2 font-serif text-lg font-bold text-indigo-900">
-                        <Sparkles size={18} />
-                        AI Roadmap
-                    </h3>
-                    <button
-                        onClick={generateAiRoadmap}
-                        disabled={isGenerating}
-                        className="rounded-md bg-indigo-600 px-3 py-1 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
-                    >
-                        {isGenerating ? 'Driving...' : 'Generate Roadmap'}
-                    </button>
-                </div>
-
-                {isGenerating && (
-                    <div className="mt-4 animate-pulse text-sm text-indigo-700">
-                        Analyzing your habits and past performance...
-                    </div>
-                )}
-
-                {aiSuggestion && !isGenerating && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="mt-4 rounded bg-white p-3 text-sm text-stone-700 shadow-sm"
-                    >
-                        <p className="font-bold text-indigo-600">Suggestion:</p>
-                        {aiSuggestion}
-                        <div className="mt-2 text-right">
-                            <button
-                                onClick={() => {
-                                    onAddGoal({
-                                        title: "Read 30 mins, 3x/week",
-                                        description: "AI Suggested goal for focus",
-                                        month: '2026-02'
-                                    });
-                                    setAiSuggestion(null);
-                                }}
-                                className="text-xs text-indigo-600 underline hover:text-indigo-800"
-                            >
-                                Accept Goal
-                            </button>
-                        </div>
-                    </motion.div>
-                )}
-            </section>
 
             {/* Goal List */}
             <ul className="space-y-4">

@@ -14,10 +14,9 @@ interface TrackerViewProps {
     onAddHabit: (habit: Omit<HabitDefinition, 'id'>) => void;
     onUpdateHabit: (id: string, updates: Partial<HabitDefinition>) => void;
     onDeleteHabit: (id: string) => void;
-    paperColor?: string;
 }
 
-export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onAddHabit, onUpdateHabit, onDeleteHabit, paperColor = '#fefce8' }: TrackerViewProps) {
+export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onAddHabit, onUpdateHabit, onDeleteHabit }: TrackerViewProps) {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -32,9 +31,7 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
         const existingDay = data.days[dateKey] || {
             date: dateKey,
             habitsCompleted: [],
-            productivity: [],
-            highlight: '',
-            reflection: ''
+            habitValues: {}
         };
 
         const currentValues = existingDay.habitValues || {};
@@ -52,10 +49,6 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
 
         onUpdateDay(dateKey, { habitValues: newValues, habitsCompleted: newCompleted });
     };
-
-    const handleTopicBlur = (dateKey: string, text: string) => {
-        onUpdateDay(dateKey, { highlight: text });
-    }
 
     const startEditing = (habit: HabitDefinition) => {
         setEditingHabit(habit.id);
@@ -139,22 +132,14 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                     <thead>
                         <tr>
                             <th
-                                className="sticky top-0 z-10 w-12 border-b border-stone-900/20 p-2 text-left font-serif font-bold text-stone-800"
-                                style={{ backgroundColor: paperColor }}
+                                className="sticky top-0 z-10 w-12 border-b border-stone-900/20 p-2 text-left font-serif font-bold text-stone-800 bg-white dark:bg-stone-800"
                             >
                                 Day
-                            </th>
-                            <th
-                                className="sticky top-0 z-10 border-b border-stone-900/20 p-2 text-left font-serif font-bold text-stone-800 min-w-[150px]"
-                                style={{ backgroundColor: paperColor }}
-                            >
-                                Topic / Highlight
                             </th>
                             {data.habits.map(habit => (
                                 <th
                                     key={habit.id}
-                                    className="sticky top-0 z-10 w-20 border-b border-stone-900/20 p-2 text-center font-serif font-bold text-stone-800 group relative"
-                                    style={{ backgroundColor: paperColor }}
+                                    className="sticky top-0 z-10 w-20 border-b border-stone-900/20 p-2 text-center font-serif font-bold text-stone-800 group relative bg-white dark:bg-stone-800"
                                 >
                                     <div className="flex flex-col items-center">
                                         {editingHabit === habit.id ? (
@@ -197,21 +182,12 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
                         {days.map((day) => {
                             const dateKey = format(day, 'yyyy-MM-dd');
                             const dayData = data.days[dateKey];
-                            const highlight = dayData?.highlight || '';
                             const values = dayData?.habitValues || {};
 
                             return (
                                 <tr key={dateKey} className="group hover:bg-stone-100 dark:hover:bg-stone-700/30">
                                     <td className="border-b border-stone-200 p-2 font-mono text-xs text-stone-500 dark:border-stone-800">
                                         {format(day, 'dd')} <span className="text-[10px] opacity-50">{format(day, 'EEE')}</span>
-                                    </td>
-                                    <td className="border-b border-stone-200 p-1 dark:border-stone-800">
-                                        <input
-                                            type="text"
-                                            className="w-full bg-transparent px-1 py-0.5 text-stone-900 focus:outline-none"
-                                            defaultValue={highlight}
-                                            onBlur={(e) => handleTopicBlur(dateKey, e.target.value)}
-                                        />
                                     </td>
                                     {data.habits.map(habit => {
                                         const val = values[habit.id];
