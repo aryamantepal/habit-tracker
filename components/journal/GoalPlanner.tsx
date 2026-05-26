@@ -1,11 +1,17 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
-import { Goal } from '@/lib/types';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns';
 import { clsx } from 'clsx';
+import { Check, Plus, Trash2, Archive, RotateCcw } from 'lucide-react';
+import { Goal, HabitDefinition, Completion } from '@/lib/types';
 
 interface GoalPlannerProps {
+    selectedDate: string;
+    data: any; // Using custom mapping or passing JournalData
+    onToggleCompletion: (habitId: string, date: string) => void;
+    onUpdateHabit: (id: string, updates: Partial<HabitDefinition>) => void;
+    onDeleteHabit: (id: string) => void;
     goals: Goal[];
     onAddGoal: (title: string) => void;
     onToggleGoal: (id: string) => void;
@@ -13,136 +19,366 @@ interface GoalPlannerProps {
     onEditGoal: (id: string, newTitle: string) => void;
 }
 
-export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEditGoal }: GoalPlannerProps) {
-    const [newGoalTitle, setNewGoalTitle] = useState('');
-    const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
-    const [editTitle, setEditTitle] = useState('');
-
-    const startEditing = (goal: Goal) => {
-        setEditingGoalId(goal.id);
-        setEditTitle(goal.title);
+// Streak Calculator
+const calculateStreak = (habitId: string, completions: Completion[]): number => {
+    const completedDates = new Set(
+        completions.filter(c => c.habitId === habitId).map(c => c.date)
+    );
+    
+    let streak = 0;
+    const checkDate = new Date();
+    
+    const formatDate = (d: Date) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const r = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${r}`;
     };
 
-    const saveEdit = () => {
-        if (editingGoalId && editTitle.trim()) {
-            onEditGoal(editingGoalId, editTitle.trim());
-            setEditingGoalId(null);
-            setEditTitle('');
+    const todayStr = formatDate(checkDate);
+    
+    if (completedDates.has(todayStr)) {
+        streak = 1;
+        checkDate.setDate(checkDate.getDate() - 1);
+        while (completedDates.has(formatDate(checkDate))) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+    } else {
+        checkDate.setDate(checkDate.getDate() - 1);
+        if (completedDates.has(formatDate(checkDate))) {
+            streak = 1;
+            checkDate.setDate(checkDate.getDate() - 1);
+            while (completedDates.has(formatDate(checkDate))) {
+                streak++;
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+        }
+    }
+    return streak;
+};
+
+export function GoalPlanner({
+    selectedDate,
+    data,
+    onToggleCompletion,
+    onUpdateHabit,
+    onDeleteHabit,
+    goals,
+    onAddGoal,
+    onToggleGoal,
+    onDeleteGoal,
+    onEditGoal
+}: GoalPlannerProps) {
+    const [newGoalTitle, setNewGoalTitle] = useState('');
+    const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+    const [editGoalTitle, setEditGoalTitle] = useState('');
+    const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
+    const [editHabitName, setEditHabitName] = useState('');
+
+    const activeHabits = data.habits.filter((h: HabitDefinition) => !h.archivedAt);
+    const archivedHabits = data.habits.filter((h: HabitDefinition) => h.archivedAt);
+
+    // Format selected date nicely
+    const getSelectedDateLabel = () => {
+        try {
+            const date = new Date(selectedDate + "T00:00:00");
+            return format(date, "EEEE, MMM d, yyyy");
+        } catch (e) {
+            return "Select a day";
         }
     };
 
-    const handleAddStart = () => {
+    // Calculate completions in current month
+    const currentDate = new Date(selectedDate + "T00:00:00");
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const totalDays = daysInMonth.length;
+    const monthStr = selectedDate.slice(0, 7); // YYYY-MM
+
+    const getHabitMonthCompletions = (habitId: string) => {
+        return data.completions.filter((c: Completion) => c.habitId === habitId && c.date.startsWith(monthStr)).length;
+    };
+
+    const handleAddGoalSubmit = () => {
         if (newGoalTitle.trim()) {
             onAddGoal(newGoalTitle.trim());
             setNewGoalTitle('');
         }
     };
 
+    const startEditingGoal = (goal: Goal) => {
+        setEditingGoalId(goal.id);
+        setEditGoalTitle(goal.title);
+    };
+
+    const saveGoalEdit = (id: string) => {
+        if (editGoalTitle.trim()) {
+            onEditGoal(id, editGoalTitle.trim());
+        }
+        setEditingGoalId(null);
+    };
+
+    const startEditingHabit = (habit: HabitDefinition) => {
+        setEditingHabitId(habit.id);
+        setEditHabitName(habit.name);
+    };
+
+    const saveHabitEdit = (id: string) => {
+        if (editHabitName.trim()) {
+            onUpdateHabit(id, { name: editHabitName.trim() });
+        }
+        setEditingHabitId(null);
+    };
+
+    const isFutureSelected = new Date(selectedDate + "T00:00:00") > new Date();
 
     return (
-        <div className="space-y-8">
-            <header className="mb-6 border-b border-stone-900/10 pb-2 flex justify-between items-end">
-                <h2 className="font-serif text-3xl font-bold text-stone-900">
+        <div className="space-y-6">
+            {/* 1. Day Check-off Checklist */}
+            <div className="bg-stone-50 dark:bg-stone-950/40 border border-stone-200 dark:border-stone-850 p-5 rounded-2xl">
+                <div className="text-xs font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-3">
+                    {getSelectedDateLabel()}
+                </div>
+                
+                {activeHabits.length === 0 ? (
+                    <p className="text-xs text-stone-500 italic text-center py-4">No active habits to log.</p>
+                ) : (
+                    <div className="space-y-2">
+                        {activeHabits.map((habit: HabitDefinition) => {
+                            const isDone = data.completions.some(
+                                (c: Completion) => c.habitId === habit.id && c.date === selectedDate
+                            );
+                            const habitColor = habit.color || '#1D9E75';
+
+                            return (
+                                <button
+                                    key={habit.id}
+                                    onClick={() => {
+                                        if (!isFutureSelected) {
+                                            onToggleCompletion(habit.id, selectedDate);
+                                        }
+                                    }}
+                                    disabled={isFutureSelected}
+                                    style={{
+                                        border: isDone ? `1.5px solid ${habitColor}` : '0.5px solid rgba(0,0,0,0.12)',
+                                        backgroundColor: isDone ? `${habitColor}14` : 'transparent'
+                                    }}
+                                    className={clsx(
+                                        "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all text-left",
+                                        isDone ? "" : "bg-white dark:bg-stone-900 hover:border-stone-400",
+                                        isFutureSelected && "opacity-40 cursor-not-allowed"
+                                    )}
+                                >
+                                    <div className="flex items-center gap-3 min-w-0 pr-2">
+                                        <span
+                                            style={{
+                                                backgroundColor: isDone ? habitColor : 'transparent',
+                                                borderColor: isDone ? 'transparent' : '#B4B2A9'
+                                            }}
+                                            className="w-5 h-5 rounded-lg border-2 flex items-center justify-center text-white text-xs shrink-0 font-bold transition-all"
+                                        >
+                                            {isDone && "✓"}
+                                        </span>
+                                        {editingHabitId === habit.id ? (
+                                            <input
+                                                autoFocus
+                                                value={editHabitName}
+                                                onChange={e => setEditHabitName(e.target.value)}
+                                                onBlur={() => saveHabitEdit(habit.id)}
+                                                onKeyDown={e => {
+                                                    if (e.key === 'Enter') saveHabitEdit(habit.id);
+                                                    if (e.key === 'Escape') setEditingHabitId(null);
+                                                }}
+                                                onClick={e => e.stopPropagation()}
+                                                className="bg-transparent border-b border-stone-400 focus:outline-none text-stone-900 dark:text-stone-100 font-medium text-sm w-full"
+                                            />
+                                        ) : (
+                                            <span 
+                                                onDoubleClick={(e) => {
+                                                    e.stopPropagation();
+                                                    startEditingHabit(habit);
+                                                }}
+                                                className={clsx(
+                                                    "text-sm font-medium truncate cursor-pointer hover:underline",
+                                                    isDone ? "text-stone-900 dark:text-stone-150 font-semibold" : "text-stone-700 dark:text-stone-300"
+                                                )}
+                                                title="Double click to rename"
+                                            >
+                                                {habit.name}
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Action Buttons for habit (archive/delete) */}
+                                    <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                                        <button
+                                            onClick={() => {
+                                                if (confirm(`Archive ${habit.name}? History logs will be preserved.`)) {
+                                                    onUpdateHabit(habit.id, { archivedAt: new Date().toISOString() });
+                                                }
+                                            }}
+                                            className="p-1 hover:text-amber-600 text-stone-400 dark:text-stone-600 transition-colors"
+                                            title="Archive"
+                                        >
+                                            <Archive size={13} />
+                                        </button>
+                                        <button
+                                            onClick={() => {
+                                                if (confirm(`Delete ${habit.name} permanently?`)) {
+                                                    onDeleteHabit(habit.id);
+                                                }
+                                            }}
+                                            className="p-1 hover:text-red-650 text-stone-400 dark:text-stone-600 transition-colors"
+                                            title="Delete"
+                                        >
+                                            <Trash2 size={13} />
+                                        </button>
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* 2. Habit Month Stats */}
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-850 p-5 rounded-2xl shadow-sm">
+                <div className="text-sm font-semibold text-stone-800 dark:text-stone-200 mb-3">
+                    This month by habit
+                </div>
+                {activeHabits.length === 0 ? (
+                    <p className="text-xs text-stone-500 italic text-center py-4">No metrics available.</p>
+                ) : (
+                    <div className="space-y-4">
+                        {activeHabits.map((habit: HabitDefinition) => {
+                            const done = getHabitMonthCompletions(habit.id);
+                            const streak = calculateStreak(habit.id, data.completions);
+                            const pct = totalDays ? Math.round((done / totalDays) * 100) : 0;
+                            const habitColor = habit.color || '#1D9E75';
+
+                            return (
+                                <div key={habit.id} className="space-y-1.5">
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="font-medium text-stone-700 dark:text-stone-300">{habit.name}</span>
+                                        <span className="text-stone-500 font-mono">
+                                            {done}/{totalDays}{streak > 0 ? ` · 🔥 ${streak}d` : ''}
+                                        </span>
+                                    </div>
+                                    <div className="h-2 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
+                                        <div 
+                                            style={{ width: `${pct}%`, backgroundColor: habitColor }} 
+                                            className="h-full rounded-full transition-all duration-300"
+                                        />
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
+            {/* 3. Monthly Goals */}
+            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-850 p-5 rounded-2xl shadow-sm">
+                <div className="text-sm font-semibold text-stone-800 dark:text-stone-200 mb-3">
                     Monthly Goals
-                </h2>
-            </header>
-
-            {/* Goal List */}
-            <ul className="space-y-4">
-                {goals.map((goal) => (
-                    <li key={goal.id} className="group flex items-start gap-3 relative">
-                        <button
-                            onClick={() => onToggleGoal(goal.id)}
-                            className={clsx(
-                                "mt-1 flex h-5 w-5 shrink-0 items-center justify-center rounded border transition-all",
-                                goal.completed
-                                    ? "border-stone-800 bg-stone-800 text-white"
-                                    : "border-stone-400 hover:border-stone-600"
-                            )}
-                        >
-                            {goal.completed && <Check size={14} />}
-                        </button>
-                        <div className="flex-1">
-                            {editingGoalId === goal.id ? (
-                                <input
-                                    autoFocus
-                                    type="text"
-                                    value={editTitle}
-                                    onChange={(e) => setEditTitle(e.target.value)}
-                                    onBlur={saveEdit}
-                                    onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                                    className="w-full bg-transparent font-serif text-lg leading-tight focus:outline-none border-b border-stone-400 text-stone-900"
-                                />
-                            ) : (
-                                <p className={clsx(
-                                    "font-serif text-lg leading-tight",
-                                    goal.completed ? "text-stone-500 line-through" : "text-stone-900"
-                                )}>
-                                    {goal.title}
-                                </p>
-                            )}
-
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                </div>
+                
+                <ul className="space-y-2 mb-4">
+                    {goals.map((goal) => (
+                        <li key={goal.id} className="group flex items-start gap-2.5 relative">
                             <button
-                                onClick={() => startEditing(goal)}
-                                className="p-1 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+                                onClick={() => onToggleGoal(goal.id)}
+                                className={clsx(
+                                    "mt-1 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-all",
+                                    goal.completed
+                                        ? "border-stone-800 bg-stone-800 text-white dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900"
+                                        : "border-stone-400 hover:border-stone-600"
+                                )}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" /></svg>
+                                {goal.completed && <Check size={12} />}
                             </button>
+                            <div className="flex-1 min-w-0">
+                                {editingGoalId === goal.id ? (
+                                    <input
+                                        autoFocus
+                                        type="text"
+                                        value={editGoalTitle}
+                                        onChange={(e) => setEditGoalTitle(e.target.value)}
+                                        onBlur={() => saveGoalEdit(goal.id)}
+                                        onKeyDown={(e) => e.key === 'Enter' && saveGoalEdit(goal.id)}
+                                        className="w-full bg-transparent font-medium text-sm leading-tight focus:outline-none border-b border-stone-400 text-stone-900 dark:text-stone-100"
+                                    />
+                                ) : (
+                                    <p 
+                                        onDoubleClick={() => startEditingGoal(goal)}
+                                        className={clsx(
+                                            "text-sm leading-tight cursor-pointer hover:underline truncate",
+                                            goal.completed ? "text-stone-400 line-through" : "text-stone-800 dark:text-stone-200"
+                                        )}
+                                        title="Double click to edit"
+                                    >
+                                        {goal.title}
+                                    </p>
+                                )}
+                            </div>
                             <button
                                 onClick={() => onDeleteGoal(goal.id)}
-                                className="p-1 text-stone-400 hover:text-red-500"
+                                className="p-0.5 text-stone-400 hover:text-red-500 shrink-0 transition-colors"
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                                <Trash2 size={12} />
                             </button>
-                        </div>
-                    </li>
-                ))}
-                {goals.length === 0 && (
-                    <li className="text-center font-serif text-stone-400 italic">
-                        No goals set for this month yet.
-                    </li>
-                )}
-            </ul>
+                        </li>
+                    ))}
+                    {goals.length === 0 && (
+                        <li className="text-center text-xs text-stone-400 italic py-2">
+                            No goals set for this month yet.
+                        </li>
+                    )}
+                </ul>
 
-            {/* Add Goal Input */}
-            <div className="flex items-center gap-2 border-t border-stone-200 pt-4 dark:border-stone-700">
-                <input
-                    type="text"
-                    value={newGoalTitle}
-                    onChange={(e) => setNewGoalTitle(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddStart()}
-                    placeholder="New Goal..."
-                    className="flex-1 rounded-md border border-stone-300 bg-transparent px-3 py-2 font-serif text-stone-900 focus:border-stone-500 focus:outline-none"
-                />
-                <button
-                    onClick={handleAddStart}
-                    className="rounded-full bg-stone-800 p-2 text-white hover:bg-stone-700"
-                >
-                    <Plus size={20} />
-                </button>
+                {/* Add Goal Input */}
+                <div className="flex items-center gap-2 pt-2 border-t border-stone-100 dark:border-stone-850">
+                    <input
+                        type="text"
+                        value={newGoalTitle}
+                        onChange={(e) => setNewGoalTitle(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAddGoalSubmit()}
+                        placeholder="Add goal..."
+                        className="flex-1 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-600 text-stone-900 dark:text-stone-100"
+                    />
+                    <button
+                        onClick={handleAddGoalSubmit}
+                        className="p-1.5 rounded-lg bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-200 text-white dark:text-stone-900"
+                    >
+                        <Plus size={14} />
+                    </button>
+                </div>
             </div>
-        </div>
-    );
-}
 
-function Check({ size }: { size: number }) {
-    return (
-        <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width={size}
-            height={size}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <polyline points="20 6 9 17 4 12" />
-        </svg>
+            {/* 4. Archived Habits Panel */}
+            {archivedHabits.length > 0 && (
+                <div className="bg-stone-50 dark:bg-stone-950/40 border border-stone-200 dark:border-stone-850 p-4 rounded-2xl">
+                    <div className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-2">
+                        Archived Habits
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {archivedHabits.map((habit: HabitDefinition) => (
+                            <div key={habit.id} className="flex items-center gap-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-full text-xs shadow-sm">
+                                <span className="text-stone-600 dark:text-stone-400 text-xs">{habit.name}</span>
+                                <button
+                                    onClick={() => onUpdateHabit(habit.id, { archivedAt: null })}
+                                    className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
+                                    title="Restore"
+                                >
+                                    <RotateCcw size={11} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }

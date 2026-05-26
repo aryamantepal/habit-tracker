@@ -28,6 +28,13 @@ export default function Home() {
   const [session, setSession] = useState<Session | null>(null);
   const [data, setData] = useState<JournalData>(INITIAL_DATA);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const r = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${r}`;
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -228,11 +235,10 @@ export default function Home() {
       <TrackerView
         currentDate={currentDate}
         onMonthChange={handleMonthChange}
+        selectedDate={selectedDate}
+        onSelectDate={setSelectedDate}
         data={data}
-        onToggleCompletion={handleToggleCompletion}
         onAddHabit={handleAddHabit}
-        onUpdateHabit={handleUpdateHabit}
-        onDeleteHabit={handleDeleteHabit}
       />
     );
   };
@@ -244,6 +250,11 @@ export default function Home() {
 
     return (
       <GoalPlanner
+        selectedDate={selectedDate}
+        data={data}
+        onToggleCompletion={handleToggleCompletion}
+        onUpdateHabit={handleUpdateHabit}
+        onDeleteHabit={handleDeleteHabit}
         goals={visibleGoals}
         onAddGoal={handleAddGoal}
         onToggleGoal={handleToggleGoal}
