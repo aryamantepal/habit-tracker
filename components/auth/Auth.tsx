@@ -49,22 +49,6 @@ export default function Auth() {
         setLoading(false);
     };
 
-    const handleGoogleLogin = async () => {
-        setLoading(true);
-        setMessage('');
-        setIsError(false);
-        const { error } = await supabase.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-                redirectTo: typeof window !== 'undefined' ? window.location.origin : '',
-            },
-        });
-        if (error) {
-            setMessage(error.message);
-            setIsError(true);
-            setLoading(false);
-        }
-    };
 
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-stone-100 dark:bg-stone-950 text-stone-900 dark:text-stone-100 p-4 transition-colors duration-200">
@@ -131,40 +115,7 @@ export default function Auth() {
                     </button>
                 </form>
 
-                <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                        <div className="w-full border-t border-stone-200 dark:border-stone-800"></div>
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white dark:bg-stone-900 px-2 text-stone-500 dark:text-stone-400">Or continue with</span>
-                    </div>
-                </div>
 
-                <button
-                    onClick={handleGoogleLogin}
-                    disabled={loading}
-                    className="w-full flex items-center justify-center gap-2 border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-950 hover:bg-stone-50 dark:hover:bg-stone-900 text-stone-700 dark:text-stone-300 font-medium py-2.5 rounded-lg transition-all duration-200 text-sm disabled:opacity-50"
-                >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24">
-                        <path
-                            fill="#EA4335"
-                            d="M5.266 9.765A7.077 7.077 0 0 1 12 4.909c1.69 0 3.218.6 4.418 1.582L19.91 3C17.782 1.145 15.055 0 12 0 7.37 0 3.393 2.673 1.51 6.577l3.756 3.188z"
-                        />
-                        <path
-                            fill="#34A853"
-                            d="M16.04 15.345c-1.077.733-2.433 1.164-4.04 1.164-3.136 0-5.836-2.118-6.782-4.973L1.445 14.73C3.305 18.59 7.332 21.273 12 21.273c3.082 0 5.864-1.018 7.89-2.764l-3.85-3.164z"
-                        />
-                        <path
-                            fill="#4285F4"
-                            d="M23.49 12.273c0-.818-.082-1.609-.218-2.382H12v4.518h6.464a5.532 5.532 0 0 1-2.4 3.636l3.85 3.164c2.254-2.082 3.576-5.145 3.576-8.936z"
-                        />
-                        <path
-                            fill="#FBBC05"
-                            d="M5.218 11.536A7.054 7.054 0 0 1 5.218 8.8l-3.756-3.188A11.96 11.96 0 0 0 0 12c0 2.29.645 4.436 1.764 6.273l3.454-2.836a7.11 7.11 0 0 1-.3-3.9z"
-                        />
-                    </svg>
-                    Google
-                </button>
 
                 <div className="mt-6 text-center text-sm">
                     <button
