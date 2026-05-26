@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay, isToday } from 'date-fns';
 import { clsx } from 'clsx';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
-import { JournalData } from '@/lib/types';
+import { JournalData, PRESET_COLORS } from '@/lib/types';
 
 interface TrackerViewProps {
     currentDate: Date;
@@ -17,6 +17,7 @@ interface TrackerViewProps {
 
 export function TrackerView({ currentDate, onMonthChange, selectedDate, onSelectDate, data, onAddHabit }: TrackerViewProps) {
     const [newHabitName, setNewHabitName] = useState('');
+    const [selectedColor, setSelectedColor] = useState(PRESET_COLORS[0].hex);
     
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
@@ -112,8 +113,8 @@ export function TrackerView({ currentDate, onMonthChange, selectedDate, onSelect
             {/* Calendar Card */}
             <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-850 p-4 rounded-2xl shadow-sm">
                 <div className="grid grid-cols-7 gap-2 text-center text-xs text-stone-400 font-bold dark:text-stone-600 mb-2">
-                    {WEEK_DAYS.map(wd => (
-                        <div key={wd}>{wd}</div>
+                    {WEEK_DAYS.map((wd, idx) => (
+                        <div key={`${wd}-${idx}`}>{wd}</div>
                     ))}
                 </div>
                 <div className="grid grid-cols-7 gap-2">
@@ -161,30 +162,47 @@ export function TrackerView({ currentDate, onMonthChange, selectedDate, onSelect
             </div>
 
             {/* Habit Quick Adder inside Left Column */}
-            <div className="flex items-center gap-2 border-t border-stone-200 dark:border-stone-850 pt-4">
-                <input
-                    className="flex-1 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-600 text-stone-900 dark:text-stone-100"
-                    placeholder="New Habit..."
-                    value={newHabitName}
-                    onChange={e => setNewHabitName(e.target.value)}
-                    onKeyDown={e => {
-                        if (e.key === 'Enter' && newHabitName.trim()) {
-                            onAddHabit({ name: newHabitName.trim(), color: '#1D9E75' });
-                            setNewHabitName('');
-                        }
-                    }}
-                />
-                <button
-                    onClick={() => {
-                        if (newHabitName.trim()) {
-                            onAddHabit({ name: newHabitName.trim(), color: '#1D9E75' });
-                            setNewHabitName('');
-                        }
-                    }}
-                    className="p-2 rounded-lg bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-200 text-white dark:text-stone-900"
-                >
-                    <Plus size={16} />
-                </button>
+            <div className="flex flex-col gap-2 border-t border-stone-200 dark:border-stone-850 pt-4">
+                <div className="flex items-center gap-2">
+                    <input
+                        className="flex-1 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-600 text-stone-900 dark:text-stone-100"
+                        placeholder="New Habit..."
+                        value={newHabitName}
+                        onChange={e => setNewHabitName(e.target.value)}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' && newHabitName.trim()) {
+                                onAddHabit({ name: newHabitName.trim(), color: selectedColor });
+                                setNewHabitName('');
+                            }
+                        }}
+                    />
+                    <button
+                        onClick={() => {
+                            if (newHabitName.trim()) {
+                                onAddHabit({ name: newHabitName.trim(), color: selectedColor });
+                                setNewHabitName('');
+                            }
+                        }}
+                        className="p-2 rounded-lg bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-200 text-white dark:text-stone-900"
+                    >
+                        <Plus size={16} />
+                    </button>
+                </div>
+                {/* Preset Color Swatches */}
+                <div className="flex gap-2 justify-center py-1">
+                    {PRESET_COLORS.map(c => (
+                        <button
+                            key={c.hex}
+                            type="button"
+                            onClick={() => setSelectedColor(c.hex)}
+                            style={{ backgroundColor: c.hex }}
+                            className={clsx(
+                                "w-4 h-4 rounded-full border border-stone-200 dark:border-stone-800 transition-transform focus:outline-none",
+                                selectedColor === c.hex ? "scale-125 ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-stone-900" : "hover:scale-110"
+                            )}
+                        />
+                    ))}
+                </div>
             </div>
         </div>
     );

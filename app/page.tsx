@@ -16,9 +16,9 @@ import { fetchJournalData, createHabit, updateHabit, deleteHabit, addCompletion,
 // Mock Initial Data
 const INITIAL_DATA: JournalData = {
   habits: [
-    { id: 'h1', name: 'Work out', color: 'red', createdAt: new Date().toISOString(), archivedAt: null },
-    { id: 'h2', name: 'LeetCode', color: 'blue', createdAt: new Date().toISOString(), archivedAt: null },
-    { id: 'h3', name: 'Reading', color: 'green', createdAt: new Date().toISOString(), archivedAt: null }
+    { id: 'h1', name: 'Work out', color: '#D85A30', createdAt: new Date().toISOString(), archivedAt: null },
+    { id: 'h2', name: 'LeetCode', color: '#185FA5', createdAt: new Date().toISOString(), archivedAt: null },
+    { id: 'h3', name: 'Running', color: '#1D9E75', createdAt: new Date().toISOString(), archivedAt: null }
   ],
   completions: [],
   monthlyGoals: []
@@ -62,9 +62,22 @@ export default function Home() {
   useEffect(() => {
     if (session?.user) {
       setLoading(true);
-      fetchJournalData(session.user.id).then(fetchedData => {
-        if (fetchedData.habits.length === 0 && fetchedData.completions.length === 0) {
-          setData({ ...fetchedData, habits: INITIAL_DATA.habits });
+      fetchJournalData(session.user.id).then(async fetchedData => {
+        if (fetchedData.habits.length === 0) {
+          // Seed default habits in Supabase
+          const defaultHabits: HabitDefinition[] = [
+            { id: crypto.randomUUID(), name: 'Work out', color: '#D85A30', createdAt: new Date().toISOString(), archivedAt: null },
+            { id: crypto.randomUUID(), name: 'LeetCode', color: '#185FA5', createdAt: new Date().toISOString(), archivedAt: null },
+            { id: crypto.randomUUID(), name: 'Running', color: '#1D9E75', createdAt: new Date().toISOString(), archivedAt: null }
+          ];
+
+          // Save them to database
+          const seedPromises = defaultHabits.map(h => createHabit(h, session.user.id));
+          await Promise.all(seedPromises);
+
+          // Retrieve updated data to get matching database records
+          const refreshedData = await fetchJournalData(session.user.id);
+          setData(refreshedData);
         } else {
           setData(fetchedData);
         }

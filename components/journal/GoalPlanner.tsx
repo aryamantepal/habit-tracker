@@ -3,8 +3,8 @@
 import React, { useState } from 'react';
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns';
 import { clsx } from 'clsx';
-import { Check, Plus, Trash2, Archive, RotateCcw } from 'lucide-react';
-import { Goal, HabitDefinition, Completion } from '@/lib/types';
+import { Check, Plus, Trash2, Archive, RotateCcw, Pencil } from 'lucide-react';
+import { Goal, HabitDefinition, Completion, PRESET_COLORS, getHabitColorHex } from '@/lib/types';
 
 interface GoalPlannerProps {
     selectedDate: string;
@@ -150,69 +150,98 @@ export function GoalPlanner({
                             const isDone = data.completions.some(
                                 (c: Completion) => c.habitId === habit.id && c.date === selectedDate
                             );
-                            const habitColor = habit.color || '#1D9E75';
+                            const habitColor = getHabitColorHex(habit.color);
 
                             return (
-                                <button
+                                <div
                                     key={habit.id}
-                                    onClick={() => {
-                                        if (!isFutureSelected) {
-                                            onToggleCompletion(habit.id, selectedDate);
-                                        }
-                                    }}
-                                    disabled={isFutureSelected}
                                     style={{
-                                        border: isDone ? `1.5px solid ${habitColor}` : '0.5px solid rgba(0,0,0,0.12)',
-                                        backgroundColor: isDone ? `${habitColor}14` : 'transparent'
+                                        borderColor: isDone ? habitColor : undefined,
+                                        backgroundColor: isDone ? `${habitColor}1a` : undefined
                                     }}
                                     className={clsx(
-                                        "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all text-left",
-                                        isDone ? "" : "bg-white dark:bg-stone-900 hover:border-stone-400",
-                                        isFutureSelected && "opacity-40 cursor-not-allowed"
+                                        "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all border",
+                                        isDone 
+                                            ? "border-2" 
+                                            : "border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-750",
+                                        isFutureSelected && "opacity-40"
                                     )}
                                 >
-                                    <div className="flex items-center gap-3 min-w-0 pr-2">
-                                        <span
-                                            style={{
-                                                backgroundColor: isDone ? habitColor : 'transparent',
-                                                borderColor: isDone ? 'transparent' : '#B4B2A9'
-                                            }}
-                                            className="w-5 h-5 rounded-lg border-2 flex items-center justify-center text-white text-xs shrink-0 font-bold transition-all"
-                                        >
-                                            {isDone && "✓"}
-                                        </span>
-                                        {editingHabitId === habit.id ? (
+                                    {editingHabitId === habit.id ? (
+                                        <div className="flex flex-col gap-2 w-full pr-2" onClick={e => e.stopPropagation()}>
                                             <input
                                                 autoFocus
                                                 value={editHabitName}
                                                 onChange={e => setEditHabitName(e.target.value)}
-                                                onBlur={() => saveHabitEdit(habit.id)}
                                                 onKeyDown={e => {
                                                     if (e.key === 'Enter') saveHabitEdit(habit.id);
                                                     if (e.key === 'Escape') setEditingHabitId(null);
                                                 }}
-                                                onClick={e => e.stopPropagation()}
-                                                className="bg-transparent border-b border-stone-400 focus:outline-none text-stone-900 dark:text-stone-100 font-medium text-sm w-full"
+                                                className="bg-white dark:bg-stone-950 border border-stone-300 dark:border-stone-850 px-2.5 py-1.5 rounded-lg focus:outline-none text-stone-900 dark:text-stone-100 font-semibold text-xs w-full"
                                             />
-                                        ) : (
+                                            {/* Color swatches in edit mode */}
+                                            <div className="flex gap-1.5 items-center mt-1">
+                                                {PRESET_COLORS.map(c => (
+                                                    <button
+                                                        key={`edit-color-${habit.id}-${c.hex}`}
+                                                        type="button"
+                                                        onClick={() => {
+                                                            onUpdateHabit(habit.id, { color: c.hex });
+                                                        }}
+                                                        style={{ backgroundColor: c.hex }}
+                                                        className={clsx(
+                                                            "w-4 h-4 rounded-full border border-stone-250 dark:border-stone-800 transition-transform focus:outline-none",
+                                                            habitColor === c.hex ? "scale-125 ring-2 ring-indigo-500" : "hover:scale-110"
+                                                        )}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <div className="flex gap-2 mt-1 text-[10px] font-semibold">
+                                                <button onClick={() => saveHabitEdit(habit.id)} className="text-indigo-600 hover:underline">Save</button>
+                                                <span className="text-stone-300">|</span>
+                                                <button onClick={() => setEditingHabitId(null)} className="text-stone-500 hover:underline">Cancel</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            disabled={isFutureSelected}
+                                            onClick={() => onToggleCompletion(habit.id, selectedDate)}
+                                            className="flex items-center gap-3 min-w-0 pr-2 flex-1 text-left focus:outline-none group/btn"
+                                        >
+                                            <span
+                                                style={{
+                                                    backgroundColor: isDone ? habitColor : 'transparent',
+                                                    borderColor: isDone ? habitColor : '#B4B2A9'
+                                                }}
+                                                className="w-5 h-5 rounded-lg border-2 flex items-center justify-center text-white shrink-0 transition-all group-hover/btn:scale-105"
+                                            >
+                                                {isDone && <Check size={12} className="stroke-[3.5]" />}
+                                            </span>
                                             <span 
                                                 onDoubleClick={(e) => {
                                                     e.stopPropagation();
                                                     startEditingHabit(habit);
                                                 }}
                                                 className={clsx(
-                                                    "text-sm font-medium truncate cursor-pointer hover:underline",
-                                                    isDone ? "text-stone-900 dark:text-stone-150 font-semibold" : "text-stone-700 dark:text-stone-300"
+                                                    "text-sm truncate cursor-pointer hover:underline",
+                                                    isDone ? "text-stone-900 dark:text-stone-50 font-bold" : "text-stone-600 dark:text-stone-400 font-medium"
                                                 )}
-                                                title="Double click to rename"
+                                                title="Click edit button or double click to edit name"
                                             >
                                                 {habit.name}
                                             </span>
-                                        )}
-                                    </div>
+                                        </button>
+                                    )}
 
-                                    {/* Action Buttons for habit (archive/delete) */}
-                                    <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+                                    {/* Action Buttons for habit (edit/archive/delete) */}
+                                    <div className="flex items-center gap-1.5 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
+                                        <button
+                                            onClick={() => startEditingHabit(habit)}
+                                            className="p-1 hover:text-indigo-650 text-stone-400 dark:text-stone-600 transition-colors"
+                                            title="Edit Name & Color"
+                                        >
+                                            <Pencil size={13} />
+                                        </button>
                                         <button
                                             onClick={() => {
                                                 if (confirm(`Archive ${habit.name}? History logs will be preserved.`)) {
@@ -236,7 +265,7 @@ export function GoalPlanner({
                                             <Trash2 size={13} />
                                         </button>
                                     </div>
-                                </button>
+                                </div>
                             );
                         })}
                     </div>
@@ -256,7 +285,7 @@ export function GoalPlanner({
                             const done = getHabitMonthCompletions(habit.id);
                             const streak = calculateStreak(habit.id, data.completions);
                             const pct = totalDays ? Math.round((done / totalDays) * 100) : 0;
-                            const habitColor = habit.color || '#1D9E75';
+                            const habitColor = getHabitColorHex(habit.color);
 
                             return (
                                 <div key={habit.id} className="space-y-1.5">
