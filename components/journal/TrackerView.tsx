@@ -1,54 +1,88 @@
 'use client';
 
 import React, { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, addMonths, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay, isToday } from 'date-fns';
 import { clsx } from 'clsx';
-import { Check, Plus, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { JournalData, DayLog, HabitDefinition } from '@/lib/types';
+import { Check, Plus, X, ChevronLeft, ChevronRight, Archive, RotateCcw, Flame, Award } from 'lucide-react';
+import { JournalData, HabitDefinition, Completion } from '@/lib/types';
 
 interface TrackerViewProps {
     currentDate: Date;
     onMonthChange: (date: Date) => void;
     data: JournalData;
-    onUpdateDay: (date: string, updates: Partial<DayLog>) => void;
-    onAddHabit: (habit: Omit<HabitDefinition, 'id'>) => void;
+    onToggleCompletion: (habitId: string, date: string) => void;
+    onAddHabit: (habit: Omit<HabitDefinition, 'id' | 'createdAt' | 'archivedAt'>) => void;
     onUpdateHabit: (id: string, updates: Partial<HabitDefinition>) => void;
     onDeleteHabit: (id: string) => void;
 }
 
-export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onAddHabit, onUpdateHabit, onDeleteHabit }: TrackerViewProps) {
+// Robust local date streak calculator
+const calculateStreak = (habitId: string, completions: Completion[]): number => {
+    const completedDates = new Set(
+        completions.filter(c => c.habitId === habitId).map(c => c.date)
+    );
+    
+    let streak = 0;
+    const checkDate = new Date();
+    
+    const formatDate = (d: Date) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const r = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${r}`;
+    };
+
+    const todayStr = formatDate(checkDate);
+    
+    if (completedDates.has(todayStr)) {
+        streak = 1;
+        checkDate.setDate(checkDate.getDate() - 1);
+        while (completedDates.has(formatDate(checkDate))) {
+            streak++;
+            checkDate.setDate(checkDate.getDate() - 1);
+        }
+    } else {
+        checkDate.setDate(checkDate.getDate() - 1);
+        if (completedDates.has(formatDate(checkDate))) {
+            streak = 1;
+            checkDate.setDate(checkDate.getDate() - 1);
+            while (completedDates.has(formatDate(checkDate))) {
+                streak++;
+                checkDate.setDate(checkDate.getDate() - 1);
+            }
+        }
+    }
+    return streak;
+};
+
+// Monthly completion rate calculator
+const calculateMonthlyRate = (habitId: string, completions: Completion[], currentDate: Date): number => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
     const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    
+    const monthStr = format(currentDate, 'yyyy-MM');
+    const completionsInMonth = completions.filter(
+        c => c.habitId === habitId && c.date.startsWith(monthStr)
+    ).length;
+    
+    return days.length > 0 ? Math.round((completionsInMonth / days.length) * 100) : 0;
+};
+
+export function TrackerView({ currentDate, onMonthChange, data, onToggleCompletion, onAddHabit, onUpdateHabit, onDeleteHabit }: TrackerViewProps) {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const startDayOfWeek = getDay(monthStart);
 
     const [newHabitName, setNewHabitName] = useState('');
-    const [newHabitType, setNewHabitType] = useState<'boolean' | 'number'>('boolean');
     const [editingHabit, setEditingHabit] = useState<string | null>(null);
     const [editName, setEditName] = useState('');
 
-    const handleValueChange = (dateKey: string, habitId: string, value: any) => {
-        // Retrieve existing day data or create fresh
-        const existingDay = data.days[dateKey] || {
-            date: dateKey,
-            habitsCompleted: [],
-            habitValues: {}
-        };
+    const activeHabits = data.habits.filter(h => !h.archivedAt);
+    const archivedHabits = data.habits.filter(h => h.archivedAt);
 
-        const currentValues = existingDay.habitValues || {};
-        const newValues = { ...currentValues, [habitId]: value };
-
-        // Also update legacy completed array for backward compat if boolean
-        let newCompleted = existingDay.habitsCompleted || [];
-        if (typeof value === 'boolean') {
-            if (value) {
-                if (!newCompleted.includes(habitId)) newCompleted = [...newCompleted, habitId];
-            } else {
-                newCompleted = newCompleted.filter(id => id !== habitId);
-            }
-        }
-
-        onUpdateDay(dateKey, { habitValues: newValues, habitsCompleted: newCompleted });
-    };
+    const todayKey = format(new Date(), 'yyyy-MM-dd');
 
     const startEditing = (habit: HabitDefinition) => {
         setEditingHabit(habit.id);
@@ -62,171 +96,243 @@ export function TrackerView({ currentDate, onMonthChange, data, onUpdateDay, onA
         setEditingHabit(null);
     }
 
+    const WEEK_DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+
     return (
-        <div className="h-full flex flex-col">
-            <header className="mb-4 flex items-baseline justify-between border-b border-stone-900/10 pb-2">
-                <div className="flex items-center gap-4">
+        <div className="h-full flex flex-col justify-between space-y-6">
+            <div className="flex-1 flex flex-col min-h-0 space-y-6">
+                {/* Header */}
+                <header className="flex items-center justify-between border-b border-stone-200 dark:border-stone-850 pb-3">
                     <div className="flex items-center gap-2">
                         <button
                             onClick={() => onMonthChange(subMonths(currentDate, 1))}
-                            className="rounded-full p-1 hover:bg-stone-900/5"
+                            className="rounded-lg p-1 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-400"
                         >
-                            <ChevronLeft size={20} className="text-stone-700" />
+                            <ChevronLeft size={18} />
                         </button>
-                        <h2 className="font-serif text-2xl font-bold text-stone-900">
+                        <h2 className="font-serif text-xl font-bold text-stone-900 dark:text-stone-100">
                             {format(currentDate, 'MMMM yyyy')}
                         </h2>
                         <button
                             onClick={() => onMonthChange(addMonths(currentDate, 1))}
-                            className="rounded-full p-1 hover:bg-stone-900/5"
+                            className="rounded-lg p-1 hover:bg-stone-100 dark:hover:bg-stone-800 text-stone-600 dark:text-stone-400"
                         >
-                            <ChevronRight size={20} className="text-stone-700" />
+                            <ChevronRight size={18} />
                         </button>
                     </div>
-                </div>
-                {/* Simple Habit Adder */}
-                <div className="flex items-center gap-2">
-                    <input
-                        className="w-32 rounded border border-stone-300 bg-transparent px-2 py-1 text-xs focus:outline-none dark:border-stone-600"
-                        placeholder="New Habit..."
-                        value={newHabitName}
-                        onChange={e => setNewHabitName(e.target.value)}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter' && newHabitName.trim()) {
-                                onAddHabit({
-                                    name: newHabitName.trim(),
-                                    type: newHabitType,
-                                    category: 'General',
-                                    color: 'stone'
-                                });
-                                setNewHabitName('');
-                            }
-                        }}
-                    />
-                    <select
-                        value={newHabitType}
-                        onChange={(e) => setNewHabitType(e.target.value as 'boolean' | 'number')}
-                        className="rounded border border-stone-300 bg-transparent px-2 py-1 text-xs focus:outline-none dark:border-stone-600"
-                    >
-                        <option value="boolean">Checkbox</option>
-                        <option value="number">Number</option>
-                    </select>
-                    <button onClick={() => {
-                        if (newHabitName.trim()) {
-                            onAddHabit({
-                                name: newHabitName.trim(),
-                                type: newHabitType,
-                                category: 'General',
-                                color: 'stone'
-                            });
-                            setNewHabitName('');
-                        }
-                    }}>
-                        <Plus size={14} />
-                    </button>
-                </div>
-            </header>
 
-            <div className="flex-1 overflow-auto custom-scrollbar">
-                <table className="w-full border-collapse text-sm">
-                    <thead>
-                        <tr>
-                            <th
-                                className="sticky top-0 z-10 w-12 border-b border-stone-900/20 p-2 text-left font-serif font-bold text-stone-800 bg-white dark:bg-stone-800"
-                            >
-                                Day
-                            </th>
-                            {data.habits.map(habit => (
-                                <th
-                                    key={habit.id}
-                                    className="sticky top-0 z-10 w-20 border-b border-stone-900/20 p-2 text-center font-serif font-bold text-stone-800 group relative bg-white dark:bg-stone-800"
-                                >
-                                    <div className="flex flex-col items-center">
-                                        {editingHabit === habit.id ? (
-                                            <input
-                                                autoFocus
-                                                className="w-full bg-transparent text-center border-b border-stone-500 focus:outline-none"
-                                                value={editName}
-                                                onChange={e => setEditName(e.target.value)}
-                                                onBlur={() => saveEditing(habit.id)}
-                                                onKeyDown={e => {
-                                                    if (e.key === 'Enter') saveEditing(habit.id);
-                                                }}
-                                            />
-                                        ) : (
-                                            <span
-                                                className="cursor-pointer hover:underline"
-                                                onDoubleClick={() => startEditing(habit)}
-                                            >
-                                                {habit.name}
-                                            </span>
-                                        )}
-                                        {habit.target && <span className="text-[10px] text-stone-500 font-normal">{habit.target}</span>}
+                    {/* Habit Quick Adder */}
+                    <div className="flex items-center gap-1.5">
+                        <input
+                            className="w-32 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 px-2.5 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-stone-400 dark:focus:ring-stone-600 text-stone-900 dark:text-stone-100"
+                            placeholder="Add habit..."
+                            value={newHabitName}
+                            onChange={e => setNewHabitName(e.target.value)}
+                            onKeyDown={e => {
+                                if (e.key === 'Enter' && newHabitName.trim()) {
+                                    onAddHabit({ name: newHabitName.trim(), color: 'stone' });
+                                    setNewHabitName('');
+                                }
+                            }}
+                        />
+                        <button
+                            onClick={() => {
+                                if (newHabitName.trim()) {
+                                    onAddHabit({ name: newHabitName.trim(), color: 'stone' });
+                                    setNewHabitName('');
+                                }
+                            }}
+                            className="p-1 rounded-lg bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-250 text-white dark:text-stone-950"
+                        >
+                            <Plus size={14} />
+                        </button>
+                    </div>
+                </header>
 
-                                        {/* Hover Actions */}
-                                        <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col bg-white/80 rounded shadow-sm">
+                {activeHabits.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-20 text-center">
+                        <p className="text-sm font-medium text-stone-400 italic mb-1">No active habits yet.</p>
+                        <p className="text-xs text-stone-500">Create one in the top right to start tracking!</p>
+                    </div>
+                ) : (
+                    <div className="space-y-6 overflow-y-auto pr-1 custom-scrollbar">
+                        {/* 1. Today's Checkoff (Top Touch Target Area) */}
+                        <section className="bg-stone-50 dark:bg-stone-950/40 p-4 rounded-xl border border-stone-200 dark:border-stone-850">
+                            <h3 className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-3">Today's Checklist</h3>
+                            <div className="space-y-2">
+                                {activeHabits.map(habit => {
+                                    const isDoneToday = data.completions.some(c => c.habitId === habit.id && c.date === todayKey);
+                                    const streak = calculateStreak(habit.id, data.completions);
+                                    const rate = calculateMonthlyRate(habit.id, data.completions, currentDate);
+
+                                    return (
+                                        <div 
+                                            key={`today-${habit.id}`}
+                                            className="flex items-center justify-between bg-white dark:bg-stone-900 p-3 rounded-lg border border-stone-150 dark:border-stone-800 shadow-sm"
+                                        >
+                                            <div className="flex flex-col min-w-0 pr-2">
+                                                <span className="font-semibold text-stone-800 dark:text-stone-150 text-sm truncate">{habit.name}</span>
+                                                <div className="flex items-center gap-3 mt-1 text-[11px] text-stone-500 dark:text-stone-450">
+                                                    <span className="flex items-center gap-0.5 text-amber-600 dark:text-amber-500">
+                                                        <Flame size={12} className="fill-current" /> {streak}d streak
+                                                    </span>
+                                                    <span className="flex items-center gap-0.5 text-stone-500">
+                                                        <Award size={12} /> {rate}% completion
+                                                    </span>
+                                                </div>
+                                            </div>
+
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); if (confirm('Delete ' + habit.name + '?')) onDeleteHabit(habit.id); }}
-                                                className="p-1 hover:text-red-600 text-stone-400"
-                                                title="Delete Habit"
+                                                onClick={() => onToggleCompletion(habit.id, todayKey)}
+                                                className={clsx(
+                                                    "h-10 w-10 flex items-center justify-center rounded-xl border-2 transition-all duration-150 active:scale-95",
+                                                    isDoneToday
+                                                        ? "border-stone-900 bg-stone-900 text-white dark:border-stone-100 dark:bg-stone-100 dark:text-stone-950"
+                                                        : "border-stone-300 dark:border-stone-700 hover:border-stone-400 dark:hover:border-stone-500 bg-transparent"
+                                                )}
                                             >
-                                                <X size={10} />
+                                                <Check size={20} className={clsx("transition-transform", isDoneToday ? "scale-100" : "scale-0")} />
                                             </button>
                                         </div>
-                                    </div>
-                                </th>
-                            ))}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {days.map((day) => {
-                            const dateKey = format(day, 'yyyy-MM-dd');
-                            const dayData = data.days[dateKey];
-                            const values = dayData?.habitValues || {};
+                                    );
+                                })}
+                            </div>
+                        </section>
 
-                            return (
-                                <tr key={dateKey} className="group hover:bg-stone-100 dark:hover:bg-stone-700/30">
-                                    <td className="border-b border-stone-200 p-2 font-mono text-xs text-stone-500 dark:border-stone-800">
-                                        {format(day, 'dd')} <span className="text-[10px] opacity-50">{format(day, 'EEE')}</span>
-                                    </td>
-                                    {data.habits.map(habit => {
-                                        const val = values[habit.id];
-                                        // Backwards compatibility check
-                                        const isCompletedLegacy = dayData?.habitsCompleted?.includes(habit.id);
-                                        const displayValue = val !== undefined ? val : (isCompletedLegacy ? true : undefined);
+                        {/* 2. Monthly Consistency Day-Grids */}
+                        <section className="space-y-4">
+                            <h3 className="text-xs font-bold text-stone-500 dark:text-stone-400 uppercase tracking-wider">Monthly Consistency</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {activeHabits.map(habit => {
+                                    const streak = calculateStreak(habit.id, data.completions);
+                                    const rate = calculateMonthlyRate(habit.id, data.completions, currentDate);
 
-                                        return (
-                                            <td key={habit.id} className="border-b border-stone-200 p-1 text-center dark:border-stone-800">
-                                                {habit.type === 'boolean' ? (
+                                    return (
+                                        <div 
+                                            key={`grid-${habit.id}`}
+                                            className="bg-white dark:bg-stone-900 p-4 rounded-xl border border-stone-200 dark:border-stone-850 shadow-sm flex flex-col justify-between"
+                                        >
+                                            <div className="flex items-start justify-between mb-2">
+                                                <div className="min-w-0 pr-2">
+                                                    {editingHabit === habit.id ? (
+                                                        <input
+                                                            autoFocus
+                                                            className="bg-transparent border-b border-stone-400 focus:outline-none font-semibold text-stone-900 dark:text-stone-100 text-sm w-full"
+                                                            value={editName}
+                                                            onChange={e => setEditName(e.target.value)}
+                                                            onBlur={() => saveEditing(habit.id)}
+                                                            onKeyDown={e => {
+                                                                if (e.key === 'Enter') saveEditing(habit.id);
+                                                            }}
+                                                        />
+                                                    ) : (
+                                                        <h4 
+                                                            className="font-semibold text-stone-850 dark:text-stone-100 text-sm truncate cursor-pointer hover:underline"
+                                                            onDoubleClick={() => startEditing(habit)}
+                                                            title="Double click to edit"
+                                                        >
+                                                            {habit.name}
+                                                        </h4>
+                                                    )}
+                                                    <div className="flex gap-2 text-[10px] text-stone-500 mt-0.5">
+                                                        <span>🔥 {streak}d</span>
+                                                        <span>🎯 {rate}%</span>
+                                                    </div>
+                                                </div>
+
+                                                <div className="flex items-center gap-1">
                                                     <button
-                                                        onClick={() => handleValueChange(dateKey, habit.id, !displayValue)}
-                                                        className={clsx(
-                                                            "mx-auto flex h-5 w-5 items-center justify-center rounded-full border transition-all",
-                                                            displayValue
-                                                                ? "border-stone-800 bg-stone-800 text-white"
-                                                                : "border-stone-300 group-hover:border-stone-400"
-                                                        )}
+                                                        onClick={() => {
+                                                            if (confirm(`Archive ${habit.name}? History logs will be preserved.`)) {
+                                                                onUpdateHabit(habit.id, { archivedAt: new Date().toISOString() });
+                                                            }
+                                                        }}
+                                                        className="p-1 hover:text-amber-600 text-stone-400 dark:text-stone-600 transition-colors"
+                                                        title="Archive"
                                                     >
-                                                        {displayValue && <Check size={12} />}
+                                                        <Archive size={13} />
                                                     </button>
-                                                ) : (
-                                                    <input
-                                                        type="text" // using text for flexibility even for numbers
-                                                        className="w-full text-center bg-transparent text-xs focus:outline-none"
-                                                        placeholder="-"
-                                                        value={displayValue as string || ''}
-                                                        onChange={(e) => handleValueChange(dateKey, habit.id, e.target.value)}
-                                                    />
-                                                )}
-                                            </td>
-                                        );
-                                    })}
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (confirm(`Permanently delete ${habit.name}?`)) {
+                                                                onDeleteHabit(habit.id);
+                                                            }
+                                                        }}
+                                                        className="p-1 hover:text-red-650 text-stone-400 dark:text-stone-600 transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        <X size={13} />
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            {/* Interactive Day Grid */}
+                                            <div className="grid grid-cols-7 gap-1 text-[9px] font-mono text-center">
+                                                {WEEK_DAYS.map(wd => (
+                                                    <div key={wd} className="text-stone-400 dark:text-stone-600 font-bold mb-1">{wd}</div>
+                                                ))}
+                                                {Array.from({ length: startDayOfWeek }).map((_, i) => (
+                                                    <div key={`empty-${i}`} className="aspect-square" />
+                                                ))}
+                                                {daysInMonth.map(day => {
+                                                    const dateKey = format(day, 'yyyy-MM-dd');
+                                                    const isCompleted = data.completions.some(c => c.habitId === habit.id && c.date === dateKey);
+                                                    const isFuture = day > new Date();
+                                                    const isTodayDate = isToday(day);
+
+                                                    return (
+                                                        <button
+                                                            key={dateKey}
+                                                            onClick={() => {
+                                                                if (!isFuture) {
+                                                                    onToggleCompletion(habit.id, dateKey);
+                                                                }
+                                                            }}
+                                                            disabled={isFuture}
+                                                            className={clsx(
+                                                                "aspect-square flex flex-col items-center justify-center rounded-md border text-[9px] transition-all",
+                                                                isCompleted
+                                                                    ? "bg-stone-900 border-stone-900 text-white dark:bg-stone-100 dark:border-stone-100 dark:text-stone-950 font-bold"
+                                                                    : "border-stone-150 dark:border-stone-800 text-stone-600 dark:text-stone-450 hover:bg-stone-50 dark:hover:bg-stone-850",
+                                                                isTodayDate && !isCompleted && "ring-1.5 ring-stone-900 dark:ring-stone-100 font-bold",
+                                                                isFuture && "opacity-20 cursor-not-allowed bg-stone-50/50 dark:bg-stone-950/20 border-stone-150 dark:border-stone-900"
+                                                            )}
+                                                            title={isFuture ? `${format(day, 'MMM d')} (Future)` : format(day, 'MMM d')}
+                                                        >
+                                                            {format(day, 'd')}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    </div>
+                )}
             </div>
+
+            {/* Archived Habits List */}
+            {archivedHabits.length > 0 && (
+                <div className="pt-4 border-t border-stone-200 dark:border-stone-800">
+                    <h3 className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-2">Archived Habits</h3>
+                    <div className="flex flex-wrap gap-2">
+                        {archivedHabits.map(habit => (
+                            <div key={habit.id} className="flex items-center gap-1.5 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-full text-xs">
+                                <span className="text-stone-600 dark:text-stone-400">{habit.name}</span>
+                                <button
+                                    onClick={() => onUpdateHabit(habit.id, { archivedAt: null })}
+                                    className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
+                                    title="Restore Habit"
+                                >
+                                    <RotateCcw size={11} />
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

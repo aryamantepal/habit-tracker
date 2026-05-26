@@ -1,16 +1,16 @@
 import { supabase } from './supabaseClient';
-import { JournalData, HabitDefinition, DayLog, Goal } from './types';
+import { JournalData, HabitDefinition, Completion, Goal } from './types';
 
 export const fetchJournalData = async (userId: string): Promise<JournalData> => {
-    // Fetch Habits
+    // Fetch Habits (including archived ones)
     const { data: habits } = await supabase
         .from('habits')
         .select('*')
         .eq('user_id', userId);
 
-    // Fetch Day Logs
-    const { data: dayLogs } = await supabase
-        .from('day_logs')
+    // Fetch Completions
+    const { data: completions } = await supabase
+        .from('completions')
         .select('*')
         .eq('user_id', userId);
 
@@ -20,41 +20,37 @@ export const fetchJournalData = async (userId: string): Promise<JournalData> => 
         .select('*')
         .eq('user_id', userId);
 
-    // Transform Day Logs array to Map/Object
-    const daysMap: Record<string, DayLog> = {};
-    dayLogs?.forEach((log) => {
-        daysMap[log.date] = {
-            date: log.date,
-            habitsCompleted: log.habits_completed || [],
-            habitValues: log.habit_values || {},
-        };
-    });
-
     return {
         habits: (habits as any[] || []).map(h => ({
-            ...h,
-            // Map any snake_case to camelCase if needed, but 'type', 'color', 'name' are same.
-            // 'target' is same.
+            id: h.id,
+            name: h.name,
+            color: h.color || 'stone',
+            createdAt: h.created_at || new Date().toISOString(),
+            archivedAt: h.archived_at || null
         })),
-        days: daysMap,
+        completions: (completions as any[] || []).map(c => ({
+            id: c.id,
+            habitId: c.habit_id,
+            date: c.date
+        })),
         monthlyGoals: (goals as any[] || []).map(g => ({
-            ...g,
-            // 'completed', 'month', 'title' are same.
+            id: g.id,
+            title: g.title,
+            month: g.month,
+            completed: g.completed
         }))
     };
 };
 
-export const createHabit = async (habit: HabitDefinition, userId: string) => {
+export const createHabit = async (habit: Omit<HabitDefinition, 'createdAt'>, userId: string) => {
     const { data, error } = await supabase
         .from('habits')
         .insert({
             id: habit.id,
             user_id: userId,
             name: habit.name,
-            category: habit.category,
             color: habit.color,
-            type: habit.type,
-            target: habit.target
+            archived_at: habit.archivedAt
         })
         .select()
         .single();
@@ -64,9 +60,14 @@ export const createHabit = async (habit: HabitDefinition, userId: string) => {
 };
 
 export const updateHabit = async (habitId: string, updates: Partial<HabitDefinition>, userId: string) => {
+    const dbPayload: any = {};
+    if (updates.name !== undefined) dbPayload.name = updates.name;
+    if (updates.color !== undefined) dbPayload.color = updates.color;
+    if (updates.archivedAt !== undefined) dbPayload.archived_at = updates.archivedAt;
+
     const { data, error } = await supabase
         .from('habits')
-        .update(updates)
+        .update(dbPayload)
         .eq('id', habitId)
         .eq('user_id', userId)
         .select()
@@ -86,28 +87,31 @@ export const deleteHabit = async (habitId: string, userId: string) => {
     if (error) console.error('Error deleting habit:', error);
 };
 
-export const updateDayLog = async (date: string, updates: Partial<DayLog>, userId: string) => {
-    // We need to handle upsert carefully.
-    // First, try to find if it exists is not needed if we use upsert with unique constraint (user_id, date).
-
-    // Map camelCase to snake_case for DB
-    const dbPayload: any = {
-        user_id: userId,
-        date: date,
-        updated_at: new Date().toISOString()
-    };
-
-    if (updates.habitsCompleted !== undefined) dbPayload.habits_completed = updates.habitsCompleted;
-    if (updates.habitValues !== undefined) dbPayload.habit_values = updates.habitValues;
-
+export const addCompletion = async (completionId: string, habitId: string, date: string, userId: string) => {
     const { data, error } = await supabase
-        .from('day_logs')
-        .upsert(dbPayload, { onConflict: 'user_id, date' })
+        .from('completions')
+        .insert({
+            id: completionId,
+            user_id: userId,
+            habit_id: habitId,
+            date: date
+        })
         .select()
         .single();
 
-    if (error) console.error('Error updating day log:', error);
+    if (error) console.error('Error adding completion:', error);
     return data;
+};
+
+export const removeCompletion = async (habitId: string, date: string, userId: string) => {
+    const { error } = await supabase
+        .from('completions')
+        .delete()
+        .eq('habit_id', habitId)
+        .eq('date', date)
+        .eq('user_id', userId);
+
+    if (error) console.error('Error removing completion:', error);
 };
 
 export const createGoal = async (goal: Goal, userId: string) => {
@@ -147,3 +151,4 @@ export const deleteGoal = async (goalId: string, userId: string) => {
 
     if (error) console.error('Error deleting goal:', error);
 };
+

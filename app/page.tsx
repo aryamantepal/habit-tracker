@@ -4,23 +4,23 @@ import React, { useState, useEffect } from 'react';
 import { NotebookLayout } from '@/components/notebook/Notebook';
 import { TrackerView } from '@/components/journal/TrackerView';
 import { GoalPlanner } from '@/components/journal/GoalPlanner';
-import { JournalData, DayLog, HabitDefinition, Goal } from '@/lib/types';
+import { JournalData, HabitDefinition, Goal } from '@/lib/types';
 import { LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabaseClient';
 import Auth from '@/components/auth/Auth';
 import { Session } from '@supabase/supabase-js';
-import { fetchJournalData, createHabit, updateDayLog, createGoal, updateGoal, deleteGoal, updateHabit, deleteHabit } from '@/lib/api';
+import { fetchJournalData, createHabit, updateHabit, deleteHabit, addCompletion, removeCompletion, createGoal, updateGoal, deleteGoal } from '@/lib/api';
 
 
 
 // Mock Initial Data
 const INITIAL_DATA: JournalData = {
   habits: [
-    { id: 'h1', name: 'Work out', category: 'Health', color: 'red', type: 'boolean' },
-    { id: 'h2', name: 'LeetCode', category: 'Career', color: 'blue', type: 'boolean' },
-    { id: 'h3', name: 'Reading', category: 'Growth', color: 'green', type: 'number', target: 'pages' }
+    { id: 'h1', name: 'Work out', color: 'red', createdAt: new Date().toISOString(), archivedAt: null },
+    { id: 'h2', name: 'LeetCode', color: 'blue', createdAt: new Date().toISOString(), archivedAt: null },
+    { id: 'h3', name: 'Reading', color: 'green', createdAt: new Date().toISOString(), archivedAt: null }
   ],
-  days: {},
+  completions: [],
   monthlyGoals: []
 };
 
@@ -56,7 +56,7 @@ export default function Home() {
     if (session?.user) {
       setLoading(true);
       fetchJournalData(session.user.id).then(fetchedData => {
-        if (fetchedData.habits.length === 0 && Object.keys(fetchedData.days).length === 0) {
+        if (fetchedData.habits.length === 0 && fetchedData.completions.length === 0) {
           setData({ ...fetchedData, habits: INITIAL_DATA.habits });
         } else {
           setData(fetchedData);
@@ -78,35 +78,42 @@ export default function Home() {
     return <Auth />;
   }
 
-  const handleUpdateDay = async (dateKey: string, updates: Partial<DayLog>) => {
-    // Optimistic Update
-    setData(prev => {
-      const existing = prev.days[dateKey] || {
-        date: dateKey,
-        habitsCompleted: [],
-        habitValues: {}
-      };
+  const handleToggleCompletion = async (habitId: string, dateKey: string) => {
+    const existingCompletion = data.completions.find(c => c.habitId === habitId && c.date === dateKey);
 
-      const updatedDay = { ...existing, ...updates };
-      if (!updatedDay.habitValues) updatedDay.habitValues = {};
-
-      return {
+    if (existingCompletion) {
+      // Optimistic
+      setData(prev => ({
         ...prev,
-        days: {
-          ...prev.days,
-          [dateKey]: updatedDay
-        }
-      };
-    });
+        completions: prev.completions.filter(c => c.id !== existingCompletion.id)
+      }));
 
-    // DB Update
-    if (session?.user) {
-      await updateDayLog(dateKey, updates, session.user.id);
+      // DB
+      if (session?.user) {
+        await removeCompletion(habitId, dateKey, session.user.id);
+      }
+    } else {
+      const newCompletionId = crypto.randomUUID();
+      // Optimistic
+      setData(prev => ({
+        ...prev,
+        completions: [...prev.completions, { id: newCompletionId, habitId, date: dateKey }]
+      }));
+
+      // DB
+      if (session?.user) {
+        await addCompletion(newCompletionId, habitId, dateKey, session.user.id);
+      }
     }
   };
 
-  const handleAddHabit = async (habit: Omit<HabitDefinition, 'id'>) => {
-    const newHabit = { ...habit, id: crypto.randomUUID() };
+  const handleAddHabit = async (habit: Omit<HabitDefinition, 'id' | 'createdAt' | 'archivedAt'>) => {
+    const newHabit = { 
+      ...habit, 
+      id: crypto.randomUUID(),
+      createdAt: new Date().toISOString(),
+      archivedAt: null
+    };
 
     // Optimistic
     setData(prev => ({
@@ -120,9 +127,14 @@ export default function Home() {
     }
   };
 
-  const handleAddGoal = async (goal: Omit<Goal, 'id' | 'completed'>) => {
+  const handleAddGoal = async (title: string) => {
     const currentMonthStr = currentDate.toISOString().slice(0, 7);
-    const newGoal = { ...goal, id: crypto.randomUUID(), completed: false, month: currentMonthStr };
+    const newGoal = {
+      id: crypto.randomUUID(),
+      title,
+      month: currentMonthStr,
+      completed: false
+    };
 
     // Optimistic
     setData(prev => ({
@@ -217,7 +229,7 @@ export default function Home() {
         currentDate={currentDate}
         onMonthChange={handleMonthChange}
         data={data}
-        onUpdateDay={handleUpdateDay}
+        onToggleCompletion={handleToggleCompletion}
         onAddHabit={handleAddHabit}
         onUpdateHabit={handleUpdateHabit}
         onDeleteHabit={handleDeleteHabit}

@@ -7,7 +7,7 @@ import { clsx } from 'clsx';
 
 interface GoalPlannerProps {
     goals: Goal[];
-    onAddGoal: (goal: Omit<Goal, 'id' | 'completed'>) => void;
+    onAddGoal: (title: string) => void;
     onToggleGoal: (id: string) => void;
     onDeleteGoal: (id: string) => void;
     onEditGoal: (id: string, newTitle: string) => void;
@@ -33,11 +33,7 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
 
     const handleAddStart = () => {
         if (newGoalTitle.trim()) {
-            onAddGoal({
-                title: newGoalTitle.trim(),
-                description: '',
-                month: '2026-02', // Mock month
-            });
+            onAddGoal(newGoalTitle.trim());
             setNewGoalTitle('');
         }
     };
@@ -85,9 +81,7 @@ export function GoalPlanner({ goals, onAddGoal, onToggleGoal, onDeleteGoal, onEd
                                     {goal.title}
                                 </p>
                             )}
-                            {goal.description && (
-                                <p className="text-sm text-stone-500">{goal.description}</p>
-                            )}
+
                         </div>
 
                         {/* Actions */}
