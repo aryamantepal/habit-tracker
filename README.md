@@ -36,17 +36,45 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
 
-## habit-tracker
-build a monthly tracking journal
-- add habits you are tracking for every day of a month
-	- ex: working out, leetcode, reading a book
-- mark consistency over a month 
-	- some cool graphs?
-- log "productivity" times throughout the day
-	- show how consistent you are a time
-- include goals for a month
-	- AI features that can "create" a roadmap to accomplish this over a month
-- record a highlight of the day
-	- include a reflection of the day feature?
-- should look like a notebook, where you can flip through pages
-    - on clicking a date, we can "log" information about the productivity and highlights for the day
+## Habit Tracker — Sleek & Fast Consistency Logger
+
+A fast, mobile-first daily habit tracker designed for consistency visualization and cross-device sync. Built with Next.js (App Router), TypeScript, Tailwind CSS, and Supabase.
+
+### Core Features
+
+*   **Fast Daily Check-off**: Big touch targets for toggle actions that feel instant due to optimistic UI updates.
+*   **Monthly Calendar Grid**: Day-by-day calendar grid mapping completions for each active habit in the selected month.
+*   **Streaks & Rates**: Calculates current active streak count and monthly completion rate dynamically for each habit.
+*   **Habit Management**: Add, rename, permanently delete, or archive habits. Archived habits are hidden from the current tracker sheet while preserving historical logs.
+*   **Monthly Goals**: Add, edit, complete, or remove high-level goals for each calendar month.
+*   **Authentication**: Built-in Email/Password signup/signin and Google OAuth for seamless cross-device synchronization.
+
+### Technical Stack
+
+*   **Framework**: Next.js 16 (App Router, Turbopack)
+*   **Database**: Supabase PostgreSQL
+*   **Auth**: Supabase GoTrue Auth (Email/Password + Google OAuth)
+*   **Styling**: Tailwind CSS v4
+
+---
+
+### Setup Instructions
+
+1.  **Clone & Install Dependencies**:
+    ```bash
+    npm install
+    ```
+2.  **Environment Variables**:
+    Create a `.env.local` file in the root directory:
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
+3.  **Database Migration**:
+    Execute the SQL queries in [supabase_schema.sql](file:///Users/aryamantepal/Desktop/habit-tracker/supabase_schema.sql) in your Supabase project's SQL Editor to set up the necessary tables and Row-Level Security (RLS) policies.
+4.  **Google OAuth Setup**:
+    To enable Google login, configure your Google Credentials in the Supabase Authentication Dashboard under Providers -> Google.
+5.  **Run Locally**:
+    ```bash
+    npm run dev
+    ```
