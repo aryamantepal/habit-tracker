@@ -21,19 +21,19 @@ export const fetchJournalData = async (userId: string): Promise<JournalData> => 
         .eq('user_id', userId);
 
     return {
-        habits: (habits as any[] || []).map(h => ({
+        habits: (habits as { id: string; name: string; color: string | null; created_at: string | null; archived_at: string | null }[] || []).map(h => ({
             id: h.id,
             name: h.name,
             color: h.color || 'stone',
             createdAt: h.created_at || new Date().toISOString(),
             archivedAt: h.archived_at || null
         })),
-        completions: (completions as any[] || []).map(c => ({
+        completions: (completions as { id: string; habit_id: string; date: string }[] || []).map(c => ({
             id: c.id,
             habitId: c.habit_id,
             date: c.date
         })),
-        monthlyGoals: (goals as any[] || []).map(g => ({
+        monthlyGoals: (goals as { id: string; title: string; month: string; completed: boolean }[] || []).map(g => ({
             id: g.id,
             title: g.title,
             month: g.month,
@@ -60,7 +60,7 @@ export const createHabit = async (habit: Omit<HabitDefinition, 'createdAt'>, use
 };
 
 export const updateHabit = async (habitId: string, updates: Partial<HabitDefinition>, userId: string) => {
-    const dbPayload: any = {};
+    const dbPayload: { name?: string; color?: string; archived_at?: string | null } = {};
     if (updates.name !== undefined) dbPayload.name = updates.name;
     if (updates.color !== undefined) dbPayload.color = updates.color;
     if (updates.archivedAt !== undefined) dbPayload.archived_at = updates.archivedAt;
