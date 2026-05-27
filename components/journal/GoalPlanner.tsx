@@ -12,6 +12,7 @@ interface GoalPlannerProps {
     onToggleCompletion: (habitId: string, date: string) => void;
     onUpdateHabit: (id: string, updates: Partial<HabitDefinition>) => void;
     onDeleteHabit: (id: string) => void;
+    onAddHabit: (habit: { name: string; color: string }) => void;
     goals: Goal[];
     onAddGoal: (title: string) => void;
     onToggleGoal: (id: string) => void;
@@ -64,6 +65,7 @@ export function GoalPlanner({
     onToggleCompletion,
     onUpdateHabit,
     onDeleteHabit,
+    onAddHabit,
     goals,
     onAddGoal,
     onToggleGoal,
@@ -75,6 +77,7 @@ export function GoalPlanner({
     const [editGoalTitle, setEditGoalTitle] = useState('');
     const [editingHabitId, setEditingHabitId] = useState<string | null>(null);
     const [editHabitName, setEditHabitName] = useState('');
+    const [newHabitName, setNewHabitName] = useState('');
 
     const activeHabits = data.habits.filter((h: HabitDefinition) => !h.archivedAt);
     const archivedHabits = data.habits.filter((h: HabitDefinition) => h.archivedAt);
@@ -132,6 +135,15 @@ export function GoalPlanner({
         setEditingHabitId(null);
     };
 
+    const handleInlineAddHabit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (newHabitName.trim()) {
+            const nextColor = PRESET_COLORS[activeHabits.length % PRESET_COLORS.length].hex;
+            onAddHabit({ name: newHabitName.trim(), color: nextColor });
+            setNewHabitName('');
+        }
+    };
+
     const isFutureSelected = new Date(selectedDate + "T00:00:00") > new Date();
 
     return (
@@ -143,9 +155,11 @@ export function GoalPlanner({
                 </div>
                 
                 {activeHabits.length === 0 ? (
-                    <p className="text-xs text-stone-500 italic text-center py-4">No active habits to log.</p>
+                    <div className="text-center py-6">
+                        <p className="text-xs text-stone-500 italic">No habits added yet. Type a habit below to get started!</p>
+                    </div>
                 ) : (
-                    <div className="space-y-2">
+                    <div className="space-y-2 mb-4">
                         {activeHabits.map((habit: HabitDefinition) => {
                             const isDone = data.completions.some(
                                 (c: Completion) => c.habitId === habit.id && c.date === selectedDate
@@ -270,6 +284,23 @@ export function GoalPlanner({
                         })}
                     </div>
                 )}
+
+                {/* Inline Habit Adder */}
+                <form onSubmit={handleInlineAddHabit} className="flex items-center gap-2 pt-3 border-t border-stone-200/60 dark:border-stone-800/60 mt-4">
+                    <input
+                        type="text"
+                        placeholder="Add a new habit..."
+                        value={newHabitName}
+                        onChange={e => setNewHabitName(e.target.value)}
+                        className="flex-1 rounded-lg border border-stone-250 dark:border-stone-850 bg-white dark:bg-stone-900 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-600 text-stone-900 dark:text-stone-100 font-medium"
+                    />
+                    <button
+                        type="submit"
+                        className="px-3 py-1.5 rounded-lg bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-200 text-white dark:text-stone-900 text-xs font-semibold shrink-0 transition-colors"
+                    >
+                        Add
+                    </button>
+                </form>
             </div>
 
             {/* 2. Habit Month Stats */}
