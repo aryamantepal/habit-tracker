@@ -87,21 +87,36 @@ export default function Home() {
         completions: prev.completions.filter(c => c.id !== existingCompletion.id)
       }));
 
-      // DB
       if (session?.user) {
-        await removeCompletion(habitId, dateKey, session.user.id);
+        try {
+          await removeCompletion(habitId, dateKey, session.user.id);
+        } catch {
+          // Rollback
+          setData(prev => ({
+            ...prev,
+            completions: [...prev.completions, existingCompletion]
+          }));
+        }
       }
     } else {
       const newCompletionId = crypto.randomUUID();
+      const newCompletion = { id: newCompletionId, habitId, date: dateKey };
       // Optimistic
       setData(prev => ({
         ...prev,
-        completions: [...prev.completions, { id: newCompletionId, habitId, date: dateKey }]
+        completions: [...prev.completions, newCompletion]
       }));
 
-      // DB
       if (session?.user) {
-        await addCompletion(newCompletionId, habitId, dateKey, session.user.id);
+        try {
+          await addCompletion(newCompletionId, habitId, dateKey, session.user.id);
+        } catch {
+          // Rollback
+          setData(prev => ({
+            ...prev,
+            completions: prev.completions.filter(c => c.id !== newCompletionId)
+          }));
+        }
       }
     }
   };

@@ -90,16 +90,17 @@ export const deleteHabit = async (habitId: string, userId: string) => {
 export const addCompletion = async (completionId: string, habitId: string, date: string, userId: string) => {
     const { data, error } = await supabase
         .from('completions')
-        .insert({
-            id: completionId,
-            user_id: userId,
-            habit_id: habitId,
-            date: date
-        })
+        .upsert(
+            { id: completionId, user_id: userId, habit_id: habitId, date },
+            { onConflict: 'habit_id,date', ignoreDuplicates: true }
+        )
         .select()
         .single();
 
-    if (error) console.error('Error adding completion:', error);
+    if (error) {
+        console.error('Error adding completion:', error.message ?? error);
+        throw error;
+    }
     return data;
 };
 
@@ -111,7 +112,10 @@ export const removeCompletion = async (habitId: string, date: string, userId: st
         .eq('date', date)
         .eq('user_id', userId);
 
-    if (error) console.error('Error removing completion:', error);
+    if (error) {
+        console.error('Error removing completion:', error.message ?? error);
+        throw error;
+    }
 };
 
 export const createGoal = async (goal: Goal, userId: string) => {
