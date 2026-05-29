@@ -153,7 +153,13 @@ export function GoalPlanner({
                 <div className="text-xs font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-3">
                     {getSelectedDateLabel()}
                 </div>
-                
+
+                {isFutureSelected && (
+                    <div className="mb-3 text-xs text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg px-3 py-2">
+                        You can&apos;t check off habits for a future date. Pick today or a past day.
+                    </div>
+                )}
+
                 {activeHabits.length === 0 ? (
                     <div className="text-center py-6">
                         <p className="text-xs text-stone-500 italic">No habits added yet. Type a habit below to get started!</p>
