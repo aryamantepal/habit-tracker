@@ -135,9 +135,16 @@ export default function Home() {
       habits: [...prev.habits, newHabit]
     }));
 
-    // DB
     if (session?.user) {
-      await createHabit(newHabit, session.user.id);
+      try {
+        await createHabit(newHabit, session.user.id);
+      } catch {
+        // Rollback
+        setData(prev => ({
+          ...prev,
+          habits: prev.habits.filter(h => h.id !== newHabit.id)
+        }));
+      }
     }
   };
 
@@ -156,9 +163,16 @@ export default function Home() {
       monthlyGoals: [...prev.monthlyGoals, newGoal]
     }));
 
-    // DB
     if (session?.user) {
-      await createGoal(newGoal, session.user.id);
+      try {
+        await createGoal(newGoal, session.user.id);
+      } catch {
+        // Rollback
+        setData(prev => ({
+          ...prev,
+          monthlyGoals: prev.monthlyGoals.filter(g => g.id !== newGoal.id)
+        }));
+      }
     }
   };
 
@@ -176,26 +190,46 @@ export default function Home() {
       )
     }));
 
-    // DB
     if (session?.user) {
-      await updateGoal(id, { completed: newCompleted }, session.user.id);
+      try {
+        await updateGoal(id, { completed: newCompleted }, session.user.id);
+      } catch {
+        // Rollback
+        setData(prev => ({
+          ...prev,
+          monthlyGoals: prev.monthlyGoals.map(g =>
+            g.id === id ? { ...g, completed: goal.completed } : g
+          )
+        }));
+      }
     }
   };
 
   const handleDeleteGoal = async (id: string) => {
+    const removedGoal = data.monthlyGoals.find(g => g.id === id);
+
     // Optimistic
     setData(prev => ({
       ...prev,
       monthlyGoals: prev.monthlyGoals.filter(g => g.id !== id)
     }));
 
-    // DB
-    if (session?.user) {
-      await deleteGoal(id, session.user.id);
+    if (session?.user && removedGoal) {
+      try {
+        await deleteGoal(id, session.user.id);
+      } catch {
+        // Rollback
+        setData(prev => ({
+          ...prev,
+          monthlyGoals: [...prev.monthlyGoals, removedGoal]
+        }));
+      }
     }
   };
 
   const handleEditGoal = async (id: string, newTitle: string) => {
+    const prevTitle = data.monthlyGoals.find(g => g.id === id)?.title;
+
     // Optimistic
     setData(prev => ({
       ...prev,
@@ -204,35 +238,69 @@ export default function Home() {
       )
     }));
 
-    // DB
     if (session?.user) {
-      await updateGoal(id, { title: newTitle }, session.user.id);
+      try {
+        await updateGoal(id, { title: newTitle }, session.user.id);
+      } catch {
+        // Rollback
+        if (prevTitle !== undefined) {
+          setData(prev => ({
+            ...prev,
+            monthlyGoals: prev.monthlyGoals.map(g =>
+              g.id === id ? { ...g, title: prevTitle } : g
+            )
+          }));
+        }
+      }
     }
   };
 
   const handleUpdateHabit = async (id: string, updates: Partial<HabitDefinition>) => {
+    const prevHabit = data.habits.find(h => h.id === id);
+
     // Optimistic
     setData(prev => ({
       ...prev,
       habits: prev.habits.map(h => h.id === id ? { ...h, ...updates } : h)
     }));
 
-    // DB
     if (session?.user) {
-      await updateHabit(id, updates, session.user.id);
+      try {
+        await updateHabit(id, updates, session.user.id);
+      } catch {
+        // Rollback
+        if (prevHabit) {
+          setData(prev => ({
+            ...prev,
+            habits: prev.habits.map(h => h.id === id ? prevHabit : h)
+          }));
+        }
+      }
     }
   }
 
   const handleDeleteHabit = async (id: string) => {
+    const removedHabit = data.habits.find(h => h.id === id);
+    const removedCompletions = data.completions.filter(c => c.habitId === id);
+
     // Optimistic
     setData(prev => ({
       ...prev,
-      habits: prev.habits.filter(h => h.id !== id)
+      habits: prev.habits.filter(h => h.id !== id),
+      completions: prev.completions.filter(c => c.habitId !== id)
     }));
 
-    // DB
-    if (session?.user) {
-      await deleteHabit(id, session.user.id);
+    if (session?.user && removedHabit) {
+      try {
+        await deleteHabit(id, session.user.id);
+      } catch {
+        // Rollback
+        setData(prev => ({
+          ...prev,
+          habits: [...prev.habits, removedHabit],
+          completions: [...prev.completions, ...removedCompletions]
+        }));
+      }
     }
   }
 

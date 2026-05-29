@@ -55,7 +55,10 @@ export const createHabit = async (habit: Omit<HabitDefinition, 'createdAt'>, use
         .select()
         .single();
 
-    if (error) console.error('Error creating habit:', error);
+    if (error) {
+        console.error('Error creating habit:', error.message ?? error);
+        throw error;
+    }
     return data;
 };
 
@@ -73,7 +76,10 @@ export const updateHabit = async (habitId: string, updates: Partial<HabitDefinit
         .select()
         .single();
 
-    if (error) console.error('Error updating habit:', error);
+    if (error) {
+        console.error('Error updating habit:', error.message ?? error);
+        throw error;
+    }
     return data;
 };
 
@@ -84,7 +90,10 @@ export const deleteHabit = async (habitId: string, userId: string) => {
         .eq('id', habitId)
         .eq('user_id', userId);
 
-    if (error) console.error('Error deleting habit:', error);
+    if (error) {
+        console.error('Error deleting habit:', error.message ?? error);
+        throw error;
+    }
 };
 
 export const addCompletion = async (completionId: string, habitId: string, date: string, userId: string) => {
@@ -131,18 +140,31 @@ export const createGoal = async (goal: Goal, userId: string) => {
         .select()
         .single();
 
-    if (error) console.error('Error creating goal:', error);
+    if (error) {
+        console.error('Error creating goal:', error.message ?? error);
+        throw error;
+    }
     return data;
 };
 
 export const updateGoal = async (goalId: string, updates: Partial<Goal>, userId: string) => {
+    const dbPayload: { title?: string; completed?: boolean; month?: string } = {};
+    if (updates.title !== undefined) dbPayload.title = updates.title;
+    if (updates.completed !== undefined) dbPayload.completed = updates.completed;
+    if (updates.month !== undefined) dbPayload.month = updates.month;
+
     const { data, error } = await supabase
         .from('monthly_goals')
-        .update(updates)
+        .update(dbPayload)
         .eq('id', goalId)
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .select()
+        .single();
 
-    if (error) console.error('Error updating goal:', error);
+    if (error) {
+        console.error('Error updating goal:', error.message ?? error);
+        throw error;
+    }
     return data;
 };
 
@@ -153,6 +175,9 @@ export const deleteGoal = async (goalId: string, userId: string) => {
         .eq('id', goalId)
         .eq('user_id', userId);
 
-    if (error) console.error('Error deleting goal:', error);
+    if (error) {
+        console.error('Error deleting goal:', error.message ?? error);
+        throw error;
+    }
 };
 
