@@ -28,3 +28,43 @@ The habit row wrapper was previously a `<button>` that contained action buttons 
 - `lib/api.ts` — upsert + proper error propagation
 - `app/page.tsx` — error rollback on optimistic toggle
 - `ERR.MD`, `INSTRUCTIONS.MD`, `screenshot.png` — removed (planning artifacts, not part of codebase)
+
+---
+
+# Follow-up: Codebase audit fixes + theme rework
+
+After the initial error fixes, a fuller audit surfaced more issues. These were fixed in priority order, each as its own commit.
+
+## Fix #1 — Error propagation + optimistic rollbacks across the board
+The first pass only hardened the completion toggle. Every other mutation still logged-but-swallowed errors, and every other optimistic handler left the UI in a false state on failure.
+
+- `lib/api.ts`: `createHabit`, `updateHabit`, `deleteHabit`, `createGoal`, `updateGoal`, `deleteGoal` now log `error.message` and **throw** so callers can react.
+- `updateGoal` previously had no `.select()` (always returned `null`) and updated with a raw `updates` object — now uses an explicit DB payload + `.select().single()`.
+- `app/page.tsx`: `handleAddHabit`, `handleUpdateHabit`, `handleDeleteHabit`, `handleAddGoal`, `handleToggleGoal`, `handleDeleteGoal`, `handleEditGoal` all capture prior state and **roll back** the optimistic update if the DB write fails. Deleting a habit also restores its completions on rollback.
+
+## Fix #2 — Typed `GoalPlanner` data prop
+- Replaced `data: any` with `data: JournalData`; the inline `HabitDefinition`/`Completion` annotations are now type-checked against the real shape.
+- Removed the unused `isToday` import.
+
+## Fix #3 — Fetch failure no longer hangs on the loading screen
+- `fetchJournalData` previously ignored query errors and returned empty arrays. It now collects the first error from the habit/completion/goal queries and throws.
+- `app/page.tsx` wraps the fetch in `.catch()/.finally()`, adds a `fetchError` state, and renders a retry screen instead of spinning forever.
+
+## Fix #4 — Future-date feedback
+- Selecting a future date previously disabled the checkboxes silently. Now an inline note explains why ("You can't check off habits for a future date…").
+
+## Theme rework — soft sage green, light-only
+Chosen direction (confirmed with the user): soft sage green accents, light-only, Elixir-ERP-inspired soft/light vibe.
+
+- **Removed dark mode entirely** — all `dark:` classes stripped from every component.
+- **Palette:** warm cream `#f4f3ee` app background, white / `#faf9f5` cards, soft warm borders (`#e7e4da` / `#ebe8df`), sage green `#6f8d76` (hover `#5e7a65`) as the single accent for buttons, selected day, goal checkboxes, focus rings, progress bars, and links.
+- Calendar day shading switched from emerald to sage rgba; deeper fill = more habits completed that day.
+- Softer rounded corners (`rounded-xl`/`rounded-2xl`/`rounded-3xl`) and a gentler shadow on main surfaces.
+
+## Verification
+- `npx tsc --noEmit` clean after each change.
+- `npm run build` passes.
+- Auth screen rendered in a headless browser to confirm the new theme (cream bg, white card, sage Sign In button/link). The main app screen is behind Supabase auth so it wasn't screenshotted, but it uses the same palette tokens.
+
+## Note / pre-existing issue
+- There are two `package-lock.json` files (one in the repo, one at `/Users/aryamantepal/`). Next.js warns about the ambiguous workspace root. Not changed here — flag for cleanup.
