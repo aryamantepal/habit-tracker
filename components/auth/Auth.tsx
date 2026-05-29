@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabaseClient';
 import { Loader2, Mail, Lock } from 'lucide-react';
 
@@ -140,6 +141,10 @@ export default function Auth() {
                     </div>
                 )}
             </div>
+
+            <Link href="/privacy" className="mt-6 text-xs text-stone-400 hover:text-[#6f8d76] hover:underline">
+                Privacy Policy
+            </Link>
         </div>
     );
 }
