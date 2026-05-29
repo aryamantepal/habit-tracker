@@ -32,6 +32,7 @@ export default function Home() {
     return `${y}-${m}-${r}`;
   });
   const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,10 +59,18 @@ export default function Home() {
   useEffect(() => {
     if (session?.user) {
       setLoading(true);
-      fetchJournalData(session.user.id).then(fetchedData => {
-        setData(fetchedData);
-        setLoading(false);
-      });
+      setFetchError(false);
+      fetchJournalData(session.user.id)
+        .then(fetchedData => {
+          setData(fetchedData);
+        })
+        .catch(err => {
+          console.error('Failed to load data:', err?.message ?? err);
+          setFetchError(true);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }, [session]);
 
@@ -75,6 +84,20 @@ export default function Home() {
 
   if (!session) {
     return <Auth />;
+  }
+
+  if (fetchError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-100 gap-4 px-6 text-center">
+        <p className="text-stone-600">Couldn&apos;t load your data. Check your connection and try again.</p>
+        <button
+          onClick={() => setSession(s => (s ? { ...s } : s))}
+          className="px-4 py-2 rounded-lg bg-stone-900 text-white text-sm font-semibold hover:bg-stone-800 transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   const handleToggleCompletion = async (habitId: string, dateKey: string) => {

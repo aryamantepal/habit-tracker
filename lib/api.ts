@@ -3,22 +3,28 @@ import { JournalData, HabitDefinition, Completion, Goal } from './types';
 
 export const fetchJournalData = async (userId: string): Promise<JournalData> => {
     // Fetch Habits (including archived ones)
-    const { data: habits } = await supabase
+    const { data: habits, error: habitsError } = await supabase
         .from('habits')
         .select('*')
         .eq('user_id', userId);
 
     // Fetch Completions
-    const { data: completions } = await supabase
+    const { data: completions, error: completionsError } = await supabase
         .from('completions')
         .select('*')
         .eq('user_id', userId);
 
     // Fetch Monthly Goals
-    const { data: goals } = await supabase
+    const { data: goals, error: goalsError } = await supabase
         .from('monthly_goals')
         .select('*')
         .eq('user_id', userId);
+
+    const error = habitsError ?? completionsError ?? goalsError;
+    if (error) {
+        console.error('Error fetching journal data:', error.message ?? error);
+        throw error;
+    }
 
     return {
         habits: (habits as { id: string; name: string; color: string | null; created_at: string | null; archived_at: string | null }[] || []).map(h => ({
