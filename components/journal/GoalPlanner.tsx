@@ -149,13 +149,13 @@ export function GoalPlanner({
     return (
         <div className="space-y-6">
             {/* 1. Day Check-off Checklist */}
-            <div className="bg-stone-50 dark:bg-stone-950/40 border border-stone-200 dark:border-stone-850 p-5 rounded-2xl">
-                <div className="text-xs font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-3">
+            <div className="bg-[#faf9f5] border border-[#ebe8df] p-5 rounded-2xl">
+                <div className="text-xs font-bold text-stone-400 uppercase tracking-wider mb-3">
                     {getSelectedDateLabel()}
                 </div>
 
                 {isFutureSelected && (
-                    <div className="mb-3 text-xs text-stone-500 dark:text-stone-400 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-lg px-3 py-2">
+                    <div className="mb-3 text-xs text-stone-500 bg-white border border-[#e7e4da] rounded-lg px-3 py-2">
                         You can&apos;t check off habits for a future date. Pick today or a past day.
                     </div>
                 )}
@@ -181,9 +181,9 @@ export function GoalPlanner({
                                     }}
                                     className={clsx(
                                         "w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all border",
-                                        isDone 
-                                            ? "border-2" 
-                                            : "border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 hover:border-stone-300 dark:hover:border-stone-750",
+                                        isDone
+                                            ? "border-2"
+                                            : "border-[#ebe8df] bg-white hover:border-[#d8d6cc]",
                                         isFutureSelected && "opacity-40"
                                     )}
                                 >
@@ -197,7 +197,7 @@ export function GoalPlanner({
                                                     if (e.key === 'Enter') saveHabitEdit(habit.id);
                                                     if (e.key === 'Escape') setEditingHabitId(null);
                                                 }}
-                                                className="bg-white dark:bg-stone-950 border border-stone-300 dark:border-stone-850 px-2.5 py-1.5 rounded-lg focus:outline-none text-stone-900 dark:text-stone-100 font-semibold text-xs w-full"
+                                                className="bg-white border border-[#e0ddd2] px-2.5 py-1.5 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#a9c0ab] text-stone-800 font-semibold text-xs w-full"
                                             />
                                             {/* Color swatches in edit mode */}
                                             <div className="flex gap-1.5 items-center mt-1">
@@ -210,14 +210,14 @@ export function GoalPlanner({
                                                         }}
                                                         style={{ backgroundColor: c.hex }}
                                                         className={clsx(
-                                                            "w-4 h-4 rounded-full border border-stone-250 dark:border-stone-800 transition-transform focus:outline-none",
-                                                            habitColor === c.hex ? "scale-125 ring-2 ring-indigo-500" : "hover:scale-110"
+                                                            "w-4 h-4 rounded-full border border-[#e0ddd2] transition-transform focus:outline-none",
+                                                            habitColor === c.hex ? "scale-125 ring-2 ring-[#6f8d76]" : "hover:scale-110"
                                                         )}
                                                     />
                                                 ))}
                                             </div>
                                             <div className="flex gap-2 mt-1 text-[10px] font-semibold">
-                                                <button onClick={() => saveHabitEdit(habit.id)} className="text-indigo-600 hover:underline">Save</button>
+                                                <button onClick={() => saveHabitEdit(habit.id)} className="text-[#6f8d76] hover:underline">Save</button>
                                                 <span className="text-stone-300">|</span>
                                                 <button onClick={() => setEditingHabitId(null)} className="text-stone-500 hover:underline">Cancel</button>
                                             </div>
@@ -244,7 +244,7 @@ export function GoalPlanner({
                                                 }}
                                                 className={clsx(
                                                     "text-sm truncate cursor-pointer hover:underline",
-                                                    isDone ? "text-stone-900 dark:text-stone-50 font-bold" : "text-stone-600 dark:text-stone-400 font-medium"
+                                                    isDone ? "text-stone-800 font-bold" : "text-stone-600 font-medium"
                                                 )}
                                                 title="Click edit button or double click to edit name"
                                             >
@@ -257,7 +257,7 @@ export function GoalPlanner({
                                     <div className="flex items-center gap-1.5 shrink-0 ml-2" onClick={e => e.stopPropagation()}>
                                         <button
                                             onClick={() => startEditingHabit(habit)}
-                                            className="p-1 hover:text-indigo-650 text-stone-400 dark:text-stone-600 transition-colors"
+                                            className="p-1 hover:text-[#6f8d76] text-stone-400 transition-colors"
                                             title="Edit Name & Color"
                                         >
                                             <Pencil size={13} />
@@ -268,7 +268,7 @@ export function GoalPlanner({
                                                     onUpdateHabit(habit.id, { archivedAt: new Date().toISOString() });
                                                 }
                                             }}
-                                            className="p-1 hover:text-amber-600 text-stone-400 dark:text-stone-600 transition-colors"
+                                            className="p-1 hover:text-amber-600 text-stone-400 transition-colors"
                                             title="Archive"
                                         >
                                             <Archive size={13} />
@@ -279,7 +279,7 @@ export function GoalPlanner({
                                                     onDeleteHabit(habit.id);
                                                 }
                                             }}
-                                            className="p-1 hover:text-red-650 text-stone-400 dark:text-stone-600 transition-colors"
+                                            className="p-1 hover:text-red-500 text-stone-400 transition-colors"
                                             title="Delete"
                                         >
                                             <Trash2 size={13} />
@@ -292,17 +292,17 @@ export function GoalPlanner({
                 )}
 
                 {/* Inline Habit Adder */}
-                <form onSubmit={handleInlineAddHabit} className="flex items-center gap-2 pt-3 border-t border-stone-200/60 dark:border-stone-800/60 mt-4">
+                <form onSubmit={handleInlineAddHabit} className="flex items-center gap-2 pt-3 border-t border-[#ebe8df] mt-4">
                     <input
                         type="text"
                         placeholder="Add a new habit..."
                         value={newHabitName}
                         onChange={e => setNewHabitName(e.target.value)}
-                        className="flex-1 rounded-lg border border-stone-250 dark:border-stone-850 bg-white dark:bg-stone-900 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-600 text-stone-900 dark:text-stone-100 font-medium"
+                        className="flex-1 rounded-xl border border-[#e0ddd2] bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#a9c0ab] text-stone-800 font-medium"
                     />
                     <button
                         type="submit"
-                        className="px-3 py-1.5 rounded-lg bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-200 text-white dark:text-stone-900 text-xs font-semibold shrink-0 transition-colors"
+                        className="px-3 py-1.5 rounded-xl bg-[#6f8d76] hover:bg-[#5e7a65] text-white text-xs font-semibold shrink-0 transition-colors"
                     >
                         Add
                     </button>
@@ -310,8 +310,8 @@ export function GoalPlanner({
             </div>
 
             {/* 2. Habit Month Stats */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-850 p-5 rounded-2xl shadow-sm">
-                <div className="text-sm font-semibold text-stone-800 dark:text-stone-200 mb-3">
+            <div className="bg-white border border-[#ebe8df] p-5 rounded-2xl shadow-sm">
+                <div className="text-sm font-semibold text-stone-800 mb-3">
                     This month by habit
                 </div>
                 {activeHabits.length === 0 ? (
@@ -327,12 +327,12 @@ export function GoalPlanner({
                             return (
                                 <div key={habit.id} className="space-y-1.5">
                                     <div className="flex justify-between items-center text-xs">
-                                        <span className="font-medium text-stone-700 dark:text-stone-300">{habit.name}</span>
+                                        <span className="font-medium text-stone-700">{habit.name}</span>
                                         <span className="text-stone-500 font-mono">
                                             {done}/{totalDays}{streak > 0 ? ` · 🔥 ${streak}d` : ''}
                                         </span>
                                     </div>
-                                    <div className="h-2 bg-stone-100 dark:bg-stone-800 rounded-full overflow-hidden">
+                                    <div className="h-2 bg-[#efede6] rounded-full overflow-hidden">
                                         <div 
                                             style={{ width: `${pct}%`, backgroundColor: habitColor }} 
                                             className="h-full rounded-full transition-all duration-300"
@@ -346,8 +346,8 @@ export function GoalPlanner({
             </div>
 
             {/* 3. Monthly Goals */}
-            <div className="bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-850 p-5 rounded-2xl shadow-sm">
-                <div className="text-sm font-semibold text-stone-800 dark:text-stone-200 mb-3">
+            <div className="bg-white border border-[#ebe8df] p-5 rounded-2xl shadow-sm">
+                <div className="text-sm font-semibold text-stone-800 mb-3">
                     Monthly Goals
                 </div>
                 
@@ -359,8 +359,8 @@ export function GoalPlanner({
                                 className={clsx(
                                     "mt-1 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-all",
                                     goal.completed
-                                        ? "border-stone-800 bg-stone-800 text-white dark:border-stone-100 dark:bg-stone-100 dark:text-stone-900"
-                                        : "border-stone-400 hover:border-stone-600"
+                                        ? "border-[#6f8d76] bg-[#6f8d76] text-white"
+                                        : "border-stone-400 hover:border-[#6f8d76]"
                                 )}
                             >
                                 {goal.completed && <Check size={12} />}
@@ -374,14 +374,14 @@ export function GoalPlanner({
                                         onChange={(e) => setEditGoalTitle(e.target.value)}
                                         onBlur={() => saveGoalEdit(goal.id)}
                                         onKeyDown={(e) => e.key === 'Enter' && saveGoalEdit(goal.id)}
-                                        className="w-full bg-transparent font-medium text-sm leading-tight focus:outline-none border-b border-stone-400 text-stone-900 dark:text-stone-100"
+                                        className="w-full bg-transparent font-medium text-sm leading-tight focus:outline-none border-b border-[#6f8d76] text-stone-800"
                                     />
                                 ) : (
                                     <p 
                                         onDoubleClick={() => startEditingGoal(goal)}
                                         className={clsx(
                                             "text-sm leading-tight cursor-pointer hover:underline truncate",
-                                            goal.completed ? "text-stone-400 line-through" : "text-stone-800 dark:text-stone-200"
+                                            goal.completed ? "text-stone-400 line-through" : "text-stone-800"
                                         )}
                                         title="Double click to edit"
                                     >
@@ -405,18 +405,18 @@ export function GoalPlanner({
                 </ul>
 
                 {/* Add Goal Input */}
-                <div className="flex items-center gap-2 pt-2 border-t border-stone-100 dark:border-stone-850">
+                <div className="flex items-center gap-2 pt-2 border-t border-[#ebe8df]">
                     <input
                         type="text"
                         value={newGoalTitle}
                         onChange={(e) => setNewGoalTitle(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddGoalSubmit()}
                         placeholder="Add goal..."
-                        className="flex-1 rounded-lg border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-950 px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-stone-400 dark:focus:ring-stone-600 text-stone-900 dark:text-stone-100"
+                        className="flex-1 rounded-xl border border-[#e0ddd2] bg-[#faf9f5] px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#a9c0ab] text-stone-800"
                     />
                     <button
                         onClick={handleAddGoalSubmit}
-                        className="p-1.5 rounded-lg bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-200 text-white dark:text-stone-900"
+                        className="p-1.5 rounded-xl bg-[#6f8d76] hover:bg-[#5e7a65] text-white transition-colors"
                     >
                         <Plus size={14} />
                     </button>
@@ -425,17 +425,17 @@ export function GoalPlanner({
 
             {/* 4. Archived Habits Panel */}
             {archivedHabits.length > 0 && (
-                <div className="bg-stone-50 dark:bg-stone-950/40 border border-stone-200 dark:border-stone-850 p-4 rounded-2xl">
-                    <div className="text-[10px] font-bold text-stone-400 dark:text-stone-500 uppercase tracking-wider mb-2">
+                <div className="bg-[#faf9f5] border border-[#ebe8df] p-4 rounded-2xl">
+                    <div className="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">
                         Archived Habits
                     </div>
                     <div className="flex flex-wrap gap-2">
                         {archivedHabits.map((habit: HabitDefinition) => (
-                            <div key={habit.id} className="flex items-center gap-2 bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 px-2.5 py-1 rounded-full text-xs shadow-sm">
-                                <span className="text-stone-600 dark:text-stone-400 text-xs">{habit.name}</span>
+                            <div key={habit.id} className="flex items-center gap-2 bg-white border border-[#ebe8df] px-2.5 py-1 rounded-full text-xs shadow-sm">
+                                <span className="text-stone-600 text-xs">{habit.name}</span>
                                 <button
                                     onClick={() => onUpdateHabit(habit.id, { archivedAt: null })}
-                                    className="text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors"
+                                    className="text-stone-400 hover:text-[#6f8d76] transition-colors"
                                     title="Restore"
                                 >
                                     <RotateCcw size={11} />

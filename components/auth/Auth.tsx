@@ -51,20 +51,20 @@ export default function Auth() {
 
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen bg-stone-100 dark:bg-stone-950 text-stone-900 dark:text-stone-100 p-4 transition-colors duration-200">
-            <div className="w-full max-w-md bg-white dark:bg-stone-900 rounded-2xl shadow-xl p-8 border border-stone-200 dark:border-stone-800">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-[#f4f3ee] text-stone-700 p-4">
+            <div className="w-full max-w-md bg-white rounded-3xl shadow-[0_8px_40px_rgba(99,110,93,0.12)] p-8 border border-[#e7e4da]">
                 <div className="text-center mb-8">
-                    <h1 className="text-3xl font-serif font-bold text-stone-800 dark:text-stone-100 mb-2">
+                    <h1 className="text-3xl font-serif font-bold text-stone-800 mb-2">
                         {isSignUp ? 'Create Account' : 'Welcome Back'}
                     </h1>
-                    <p className="text-stone-500 dark:text-stone-400 text-sm">
+                    <p className="text-stone-500 text-sm">
                         {isSignUp ? 'Sign up to track and sync your habits' : 'Sign in to sync your habits across devices'}
                     </p>
                 </div>
 
                 <form onSubmit={handleAuth} className="space-y-4">
                     <div>
-                        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-1">
+                        <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">
                             Email address
                         </label>
                         <div className="relative">
@@ -74,7 +74,7 @@ export default function Auth() {
                             <input
                                 type="email"
                                 placeholder="you@example.com"
-                                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 focus:ring-2 focus:ring-stone-400 focus:border-transparent outline-none transition-all bg-stone-50 dark:bg-stone-950 focus:bg-white dark:focus:bg-stone-900 text-sm text-stone-900 dark:text-stone-100"
+                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#e0ddd2] focus:ring-2 focus:ring-[#a9c0ab] focus:border-transparent outline-none transition-all bg-[#faf9f5] focus:bg-white text-sm text-stone-800"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -83,7 +83,7 @@ export default function Auth() {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wider mb-1">
+                        <label className="block text-xs font-medium text-stone-500 uppercase tracking-wider mb-1">
                             Password
                         </label>
                         <div className="relative">
@@ -93,7 +93,7 @@ export default function Auth() {
                             <input
                                 type="password"
                                 placeholder="••••••••"
-                                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-stone-200 dark:border-stone-800 focus:ring-2 focus:ring-stone-400 focus:border-transparent outline-none transition-all bg-stone-50 dark:bg-stone-950 focus:bg-white dark:focus:bg-stone-900 text-sm text-stone-900 dark:text-stone-100"
+                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#e0ddd2] focus:ring-2 focus:ring-[#a9c0ab] focus:border-transparent outline-none transition-all bg-[#faf9f5] focus:bg-white text-sm text-stone-800"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 minLength={6}
@@ -105,7 +105,7 @@ export default function Auth() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full mt-2 bg-stone-900 dark:bg-stone-100 hover:bg-stone-800 dark:hover:bg-stone-200 text-white dark:text-stone-900 font-medium py-2.5 rounded-lg transition-all duration-200 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full mt-2 bg-[#6f8d76] hover:bg-[#5e7a65] text-white font-medium py-2.5 rounded-xl transition-all duration-200 flex items-center justify-center text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? (
                             <Loader2 className="w-4 h-4 animate-spin mr-2" />
@@ -124,17 +124,17 @@ export default function Auth() {
                             setMessage('');
                             setIsError(false);
                         }}
-                        className="text-stone-500 hover:text-stone-800 dark:hover:text-stone-200 underline font-medium"
+                        className="text-[#6f8d76] hover:text-[#5e7a65] underline font-medium"
                     >
                         {isSignUp ? 'Already have an account? Sign In' : "Don't have an account? Sign Up"}
                     </button>
                 </div>
 
                 {message && (
-                    <div className={`mt-6 p-3 rounded-lg text-xs text-center border ${
-                        isError 
-                            ? 'bg-red-50 dark:bg-red-950/20 text-red-700 dark:text-red-400 border-red-200 dark:border-red-900/50' 
-                            : 'bg-green-50 dark:bg-green-950/20 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900/50'
+                    <div className={`mt-6 p-3 rounded-xl text-xs text-center border ${
+                        isError
+                            ? 'bg-red-50 text-red-700 border-red-200'
+                            : 'bg-[#eef2ec] text-[#4f6b56] border-[#cdddcf]'
                     }`}>
                         {message}
                     </div>

@@ -76,7 +76,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-stone-100">
+      <div className="flex items-center justify-center min-h-screen bg-[#f4f3ee]">
         <div className="animate-pulse text-stone-400">Loading your journal...</div>
       </div>
     );
@@ -88,11 +88,11 @@ export default function Home() {
 
   if (fetchError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-stone-100 gap-4 px-6 text-center">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#f4f3ee] gap-4 px-6 text-center">
         <p className="text-stone-600">Couldn&apos;t load your data. Check your connection and try again.</p>
         <button
           onClick={() => setSession(s => (s ? { ...s } : s))}
-          className="px-4 py-2 rounded-lg bg-stone-900 text-white text-sm font-semibold hover:bg-stone-800 transition-colors"
+          className="px-4 py-2 rounded-xl bg-[#6f8d76] text-white text-sm font-semibold hover:bg-[#5e7a65] transition-colors"
         >
           Retry
         </button>
@@ -367,7 +367,7 @@ export default function Home() {
     <main>
       <button
         onClick={() => supabase.auth.signOut()}
-        className="fixed top-4 right-4 z-50 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-stone-100 text-stone-500 transition-all border border-stone-200"
+        className="fixed top-4 right-4 z-50 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-[#eef2ec] hover:text-[#6f8d76] text-stone-500 transition-all border border-[#e7e4da]"
         title="Sign Out"
       >
         <LogOut className="w-5 h-5" />
