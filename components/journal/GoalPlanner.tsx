@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { clsx } from 'clsx';
 import { Check, Plus, Trash2, Archive, RotateCcw, Pencil } from 'lucide-react';
-import { Goal, HabitDefinition, Completion, PRESET_COLORS, getHabitColorHex } from '@/lib/types';
+import { Goal, HabitDefinition, Completion, JournalData, PRESET_COLORS, getHabitColorHex } from '@/lib/types';
 
 interface GoalPlannerProps {
     selectedDate: string;
-    data: any; // Using custom mapping or passing JournalData
+    data: JournalData;
     onToggleCompletion: (habitId: string, date: string) => void;
     onUpdateHabit: (id: string, updates: Partial<HabitDefinition>) => void;
     onDeleteHabit: (id: string) => void;
