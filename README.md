@@ -1,80 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Habit Tracker
 
-## Getting Started
+A notebook-style habit journal built with Next.js, React, TypeScript, and Supabase. Track daily completions in a monthly grid, manage a daily checklist, and plan monthly goals. Email/password accounts keep each user's journal in Supabase.
 
-First, run the development server:
+## Local setup
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+Use Node.js compatible with the Next.js version in `package.json` and npm. Run commands from this repository's root.
+
+```sh
+npm ci
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Create a Supabase project, enable email/password sign-in, and run [supabase_schema.sql](supabase_schema.sql) in its SQL editor. It creates `habits`, `completions`, and `monthly_goals` with row-level security. The policy statements are intended for initial setup; rerunning them against existing policies requires adjustment.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Create `.env.local` with your project's public client credentials:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```dotenv
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
+```
 
-## Learn More
+The client throws an error if either variable is missing. Use the public anon key, never a service-role key. Configure Supabase's authentication URLs for your local/deployed site and complete email verification if enabled.
 
-To learn more about Next.js, take a look at the following resources:
+```sh
+npm run dev
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Open http://localhost:3000, create an account, and add your first habit. New journals start empty.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Commands
 
-## Deploy on Vercel
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run lint` | Run ESLint |
+| `npm run build` | Create a production build |
+| `npm start` | Serve the production build |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The same environment variables are needed when building and deploying.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Code map
 
+- [app/page.tsx](app/page.tsx): session handling and journal interactions.
+- [components/journal](components/journal): monthly tracker, daily checklist, and goals.
+- [components/auth/Auth.tsx](components/auth/Auth.tsx): signup and sign-in.
+- [lib/api.ts](lib/api.ts): Supabase reads and writes.
+- [lib/types.ts](lib/types.ts): journal data types.
+- [docs](docs): implementation notes and walkthroughs.
 
-## Habit Tracker — Sleek & Fast Consistency Logger
-
-A fast, mobile-first daily habit tracker designed for consistency visualization and cross-device sync. Built with Next.js (App Router), TypeScript, Tailwind CSS, and Supabase.
-
-### Core Features
-
-*   **Fast Daily Check-off**: Big touch targets for toggle actions that feel instant due to optimistic UI updates.
-*   **Monthly Calendar Grid**: Day-by-day calendar grid mapping completions for each active habit in the selected month.
-*   **Streaks & Rates**: Calculates current active streak count and monthly completion rate dynamically for each habit.
-*   **Habit Management**: Add, rename, permanently delete, or archive habits. Archived habits are hidden from the current tracker sheet while preserving historical logs.
-*   **Monthly Goals**: Add, edit, complete, or remove high-level goals for each calendar month.
-*   **Authentication**: Built-in Email/Password signup/signin and Google OAuth for seamless cross-device synchronization.
-
-### Technical Stack
-
-*   **Framework**: Next.js 16 (App Router, Turbopack)
-*   **Database**: Supabase PostgreSQL
-*   **Auth**: Supabase GoTrue Auth (Email/Password + Google OAuth)
-*   **Styling**: Tailwind CSS v4
-
----
-
-### Setup Instructions
-
-1.  **Clone & Install Dependencies**:
-    ```bash
-    npm install
-    ```
-2.  **Environment Variables**:
-    Create a `.env.local` file in the root directory:
-    ```env
-    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
-    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-    ```
-3.  **Database Migration**:
-    Execute the SQL queries in [supabase_schema.sql](file:///Users/aryamantepal/Desktop/habit-tracker/supabase_schema.sql) in your Supabase project's SQL Editor to set up the necessary tables and Row-Level Security (RLS) policies.
-4.  **Google OAuth Setup**:
-    To enable Google login, configure your Google Credentials in the Supabase Authentication Dashboard under Providers -> Google.
-5.  **Run Locally**:
-    ```bash
-    npm run dev
-    ```
+There is no automated test script in `package.json`. A useful manual check is to create a habit, toggle a completion, add a monthly goal, and reload to confirm persistence.
