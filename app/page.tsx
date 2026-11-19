@@ -1,29 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { NotebookLayout } from '@/components/notebook/Notebook';
 import { TrackerView } from '@/components/journal/TrackerView';
 import { GoalPlanner } from '@/components/journal/GoalPlanner';
-import { JournalData, HabitDefinition, Goal } from '@/lib/types';
-import { LogOut } from 'lucide-react';
+import { JournalData, HabitDefinition } from '@/lib/types';
+import { Download, Upload } from 'lucide-react';
 import { format, isSameMonth, startOfMonth } from 'date-fns';
-import { supabase } from '@/lib/supabaseClient';
-import Auth from '@/components/auth/Auth';
-import { Session } from '@supabase/supabase-js';
-import { fetchJournalData, createHabit, updateHabit, deleteHabit, addCompletion, removeCompletion, createGoal, updateGoal, deleteGoal } from '@/lib/api';
+import { loadJournal, saveJournal, exportJournal, parseJournalImport } from '@/lib/storage';
 
-
-
-// Mock Initial Data
 const INITIAL_DATA: JournalData = {
   habits: [],
   completions: [],
   monthlyGoals: []
 };
 
+const controlClass =
+  'p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-[#eef2ec] hover:text-[#6f8d76] text-stone-500 transition-all border border-[#e7e4da]';
+
 export default function Home() {
-  const [session, setSession] = useState<Session | null>(null);
   const [data, setData] = useState<JournalData>(INITIAL_DATA);
+  // Stays false until localStorage has been read, so the empty initial state is never saved over real data.
+  const [hydrated, setHydrated] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     const d = new Date();
@@ -32,27 +31,20 @@ export default function Home() {
     const r = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${r}`;
   });
-  const [authReady, setAuthReady] = useState(false);
-  // The user whose journal is currently in `data`; lags behind the session while a fetch is in flight.
-  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
-  const [fetchError, setFetchError] = useState(false);
-  const [reloadKey, setReloadKey] = useState(0);
-  const userId = session?.user.id ?? null;
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setAuthReady(true);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
+    // localStorage only exists in the browser, so it can't be read during the first render without a hydration mismatch.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setData(loadJournal());
+    setHydrated(true);
+    // Ask the browser not to evict our data under storage pressure; best effort.
+    navigator.storage?.persist?.().catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (hydrated) saveJournal(data);
+  }, [data, hydrated]);
 
   const handleMonthChange = (date: Date) => {
     setCurrentDate(date);
@@ -62,32 +54,22 @@ export default function Home() {
     setSelectedDate(format(target, 'yyyy-MM-dd'));
   };
 
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const input = e.target;
+    const file = input.files?.[0];
+    input.value = ''; // allow re-importing the same file
+    if (!file) return;
+    try {
+      const imported = parseJournalImport(await file.text());
+      if (confirm('Importing replaces all of your current habits, completions and goals. Continue?')) {
+        setData(imported);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Could not import that file.');
+    }
+  };
 
-
-  // Fetch when the signed-in user changes. Keyed on the user id, not the session
-  // object, so hourly token refreshes don't reload the whole journal.
-  useEffect(() => {
-    if (!userId) return;
-    let cancelled = false;
-    fetchJournalData(userId)
-      .then(fetchedData => {
-        if (cancelled) return;
-        setData(fetchedData);
-        setLoadedUserId(userId);
-      })
-      .catch(err => {
-        if (cancelled) return;
-        console.error('Failed to load data:', err?.message ?? err);
-        setFetchError(true);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [userId, reloadKey]);
-
-  const loading = !authReady || (userId !== null && userId !== loadedUserId && !fetchError);
-
-  if (loading) {
+  if (!hydrated) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-[#f4f3ee]">
         <div className="animate-pulse text-stone-400">Loading your journal...</div>
@@ -95,253 +77,71 @@ export default function Home() {
     );
   }
 
-  if (!session) {
-    return <Auth />;
-  }
-
-  if (fetchError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-[#f4f3ee] gap-4 px-6 text-center">
-        <p className="text-stone-600">Couldn&apos;t load your data. Check your connection and try again.</p>
-        <button
-          onClick={() => {
-            setFetchError(false);
-            setReloadKey(k => k + 1);
-          }}
-          className="px-4 py-2 rounded-xl bg-[#6f8d76] text-white text-sm font-semibold hover:bg-[#5e7a65] transition-colors"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  const handleToggleCompletion = async (habitId: string, dateKey: string) => {
-    const existingCompletion = data.completions.find(c => c.habitId === habitId && c.date === dateKey);
-
-    if (existingCompletion) {
-      // Optimistic
-      setData(prev => ({
+  const handleToggleCompletion = (habitId: string, dateKey: string) => {
+    const newId = crypto.randomUUID();
+    setData(prev => {
+      const exists = prev.completions.some(c => c.habitId === habitId && c.date === dateKey);
+      return {
         ...prev,
-        completions: prev.completions.filter(c => c.id !== existingCompletion.id)
-      }));
-
-      if (session?.user) {
-        try {
-          await removeCompletion(habitId, dateKey, session.user.id);
-        } catch {
-          // Rollback
-          setData(prev => ({
-            ...prev,
-            completions: [...prev.completions, existingCompletion]
-          }));
-        }
-      }
-    } else {
-      const newCompletionId = crypto.randomUUID();
-      const newCompletion = { id: newCompletionId, habitId, date: dateKey };
-      // Optimistic
-      setData(prev => ({
-        ...prev,
-        completions: [...prev.completions, newCompletion]
-      }));
-
-      if (session?.user) {
-        try {
-          await addCompletion(newCompletionId, habitId, dateKey, session.user.id);
-        } catch {
-          // Rollback
-          setData(prev => ({
-            ...prev,
-            completions: prev.completions.filter(c => c.id !== newCompletionId)
-          }));
-        }
-      }
-    }
+        completions: exists
+          ? prev.completions.filter(c => !(c.habitId === habitId && c.date === dateKey))
+          : [...prev.completions, { id: newId, habitId, date: dateKey }]
+      };
+    });
   };
 
-  const handleAddHabit = async (habit: Omit<HabitDefinition, 'id' | 'createdAt' | 'archivedAt'>) => {
-    const newHabit = { 
-      ...habit, 
+  const handleAddHabit = (habit: Omit<HabitDefinition, 'id' | 'createdAt' | 'archivedAt'>) => {
+    const newHabit = {
+      ...habit,
       id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       archivedAt: null
     };
-
-    // Optimistic
-    setData(prev => ({
-      ...prev,
-      habits: [...prev.habits, newHabit]
-    }));
-
-    if (session?.user) {
-      try {
-        await createHabit(newHabit, session.user.id);
-      } catch {
-        // Rollback
-        setData(prev => ({
-          ...prev,
-          habits: prev.habits.filter(h => h.id !== newHabit.id)
-        }));
-      }
-    }
+    setData(prev => ({ ...prev, habits: [...prev.habits, newHabit] }));
   };
 
-  const handleAddGoal = async (title: string) => {
-    const currentMonthStr = format(currentDate, 'yyyy-MM');
+  const handleAddGoal = (title: string) => {
     const newGoal = {
       id: crypto.randomUUID(),
       title,
-      month: currentMonthStr,
+      month: format(currentDate, 'yyyy-MM'),
       completed: false
     };
-
-    // Optimistic
-    setData(prev => ({
-      ...prev,
-      monthlyGoals: [...prev.monthlyGoals, newGoal]
-    }));
-
-    if (session?.user) {
-      try {
-        await createGoal(newGoal, session.user.id);
-      } catch {
-        // Rollback
-        setData(prev => ({
-          ...prev,
-          monthlyGoals: prev.monthlyGoals.filter(g => g.id !== newGoal.id)
-        }));
-      }
-    }
+    setData(prev => ({ ...prev, monthlyGoals: [...prev.monthlyGoals, newGoal] }));
   };
 
-  const handleToggleGoal = async (id: string) => {
-    const goal = data.monthlyGoals.find(g => g.id === id);
-    if (!goal) return;
-
-    const newCompleted = !goal.completed;
-
-    // Optimistic
+  const handleToggleGoal = (id: string) => {
     setData(prev => ({
       ...prev,
-      monthlyGoals: prev.monthlyGoals.map(g =>
-        g.id === id ? { ...g, completed: newCompleted } : g
-      )
+      monthlyGoals: prev.monthlyGoals.map(g => g.id === id ? { ...g, completed: !g.completed } : g)
     }));
-
-    if (session?.user) {
-      try {
-        await updateGoal(id, { completed: newCompleted }, session.user.id);
-      } catch {
-        // Rollback
-        setData(prev => ({
-          ...prev,
-          monthlyGoals: prev.monthlyGoals.map(g =>
-            g.id === id ? { ...g, completed: goal.completed } : g
-          )
-        }));
-      }
-    }
   };
 
-  const handleDeleteGoal = async (id: string) => {
-    const removedGoal = data.monthlyGoals.find(g => g.id === id);
+  const handleDeleteGoal = (id: string) => {
+    setData(prev => ({ ...prev, monthlyGoals: prev.monthlyGoals.filter(g => g.id !== id) }));
+  };
 
-    // Optimistic
+  const handleEditGoal = (id: string, newTitle: string) => {
     setData(prev => ({
       ...prev,
-      monthlyGoals: prev.monthlyGoals.filter(g => g.id !== id)
+      monthlyGoals: prev.monthlyGoals.map(g => g.id === id ? { ...g, title: newTitle } : g)
     }));
-
-    if (session?.user && removedGoal) {
-      try {
-        await deleteGoal(id, session.user.id);
-      } catch {
-        // Rollback
-        setData(prev => ({
-          ...prev,
-          monthlyGoals: [...prev.monthlyGoals, removedGoal]
-        }));
-      }
-    }
   };
 
-  const handleEditGoal = async (id: string, newTitle: string) => {
-    const prevTitle = data.monthlyGoals.find(g => g.id === id)?.title;
-
-    // Optimistic
-    setData(prev => ({
-      ...prev,
-      monthlyGoals: prev.monthlyGoals.map(g =>
-        g.id === id ? { ...g, title: newTitle } : g
-      )
-    }));
-
-    if (session?.user) {
-      try {
-        await updateGoal(id, { title: newTitle }, session.user.id);
-      } catch {
-        // Rollback
-        if (prevTitle !== undefined) {
-          setData(prev => ({
-            ...prev,
-            monthlyGoals: prev.monthlyGoals.map(g =>
-              g.id === id ? { ...g, title: prevTitle } : g
-            )
-          }));
-        }
-      }
-    }
-  };
-
-  const handleUpdateHabit = async (id: string, updates: Partial<HabitDefinition>) => {
-    const prevHabit = data.habits.find(h => h.id === id);
-
-    // Optimistic
+  const handleUpdateHabit = (id: string, updates: Partial<HabitDefinition>) => {
     setData(prev => ({
       ...prev,
       habits: prev.habits.map(h => h.id === id ? { ...h, ...updates } : h)
     }));
+  };
 
-    if (session?.user) {
-      try {
-        await updateHabit(id, updates, session.user.id);
-      } catch {
-        // Rollback
-        if (prevHabit) {
-          setData(prev => ({
-            ...prev,
-            habits: prev.habits.map(h => h.id === id ? prevHabit : h)
-          }));
-        }
-      }
-    }
-  }
-
-  const handleDeleteHabit = async (id: string) => {
-    const removedHabit = data.habits.find(h => h.id === id);
-    const removedCompletions = data.completions.filter(c => c.habitId === id);
-
-    // Optimistic
+  const handleDeleteHabit = (id: string) => {
     setData(prev => ({
       ...prev,
       habits: prev.habits.filter(h => h.id !== id),
       completions: prev.completions.filter(c => c.habitId !== id)
     }));
-
-    if (session?.user && removedHabit) {
-      try {
-        await deleteHabit(id, session.user.id);
-      } catch {
-        // Rollback
-        setData(prev => ({
-          ...prev,
-          habits: [...prev.habits, removedHabit],
-          completions: [...prev.completions, ...removedCompletions]
-        }));
-      }
-    }
-  }
+  };
 
   // Left Page: Monthly Tracker Table
   const renderLeftPage = () => {
@@ -381,18 +181,44 @@ export default function Home() {
 
   return (
     <main>
-      <button
-        onClick={() => supabase.auth.signOut()}
-        className="fixed top-4 right-4 z-50 p-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:bg-[#eef2ec] hover:text-[#6f8d76] text-stone-500 transition-all border border-[#e7e4da]"
-        title="Sign Out"
-      >
-        <LogOut className="w-5 h-5" />
-      </button>
+      <div className="fixed top-4 right-4 z-50 flex gap-2">
+        <button
+          onClick={() => exportJournal(data)}
+          className={controlClass}
+          title="Export backup"
+          aria-label="Export backup"
+        >
+          <Download className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => importInputRef.current?.click()}
+          className={controlClass}
+          title="Import backup"
+          aria-label="Import backup"
+        >
+          <Upload className="w-5 h-5" />
+        </button>
+        <input
+          ref={importInputRef}
+          type="file"
+          accept=".json,application/json"
+          onChange={handleImportFile}
+          className="hidden"
+          aria-hidden="true"
+          tabIndex={-1}
+        />
+      </div>
 
       <NotebookLayout
         leftPage={renderLeftPage()}
         rightPage={renderRightPage()}
       />
+
+      <div className="bg-[#f4f3ee] pb-6 text-center">
+        <Link href="/privacy" className="text-xs text-stone-400 hover:text-[#6f8d76] hover:underline">
+          Privacy Policy
+        </Link>
+      </div>
     </main>
   );
 }

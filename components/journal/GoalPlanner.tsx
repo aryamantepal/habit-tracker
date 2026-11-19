@@ -87,7 +87,7 @@ export function GoalPlanner({
         try {
             const date = new Date(selectedDate + "T00:00:00");
             return format(date, "EEEE, MMM d, yyyy");
-        } catch (e) {
+        } catch {
             return "Select a day";
         }
     };
