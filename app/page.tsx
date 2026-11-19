@@ -6,7 +6,7 @@ import { TrackerView } from '@/components/journal/TrackerView';
 import { GoalPlanner } from '@/components/journal/GoalPlanner';
 import { JournalData, HabitDefinition, Goal } from '@/lib/types';
 import { LogOut } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, isSameMonth, startOfMonth } from 'date-fns';
 import { supabase } from '@/lib/supabaseClient';
 import Auth from '@/components/auth/Auth';
 import { Session } from '@supabase/supabase-js';
@@ -52,6 +52,10 @@ export default function Home() {
 
   const handleMonthChange = (date: Date) => {
     setCurrentDate(date);
+    // Keep the right page on the month the calendar shows: today in the current month, else the 1st.
+    const today = new Date();
+    const target = isSameMonth(date, today) ? today : startOfMonth(date);
+    setSelectedDate(format(target, 'yyyy-MM-dd'));
   };
 
 
