@@ -95,6 +95,7 @@ export function TrackerView({ currentDate, onMonthChange, selectedDate, onSelect
             <div className="flex items-center justify-between border-t border-[#ebe8df] pt-4">
                 <button
                     onClick={() => onMonthChange(subMonths(currentDate, 1))}
+                    aria-label="Previous month"
                     className="rounded-lg p-1.5 border border-[#e0ddd2] hover:bg-[#eef2ec] transition-colors"
                 >
                     <ChevronLeft size={16} className="text-stone-500" />
@@ -104,6 +105,7 @@ export function TrackerView({ currentDate, onMonthChange, selectedDate, onSelect
                 </span>
                 <button
                     onClick={() => onMonthChange(addMonths(currentDate, 1))}
+                    aria-label="Next month"
                     className="rounded-lg p-1.5 border border-[#e0ddd2] hover:bg-[#eef2ec] transition-colors"
                 >
                     <ChevronRight size={16} className="text-stone-500" />
@@ -137,6 +139,8 @@ export function TrackerView({ currentDate, onMonthChange, selectedDate, onSelect
                             <button
                                 key={dateKey}
                                 onClick={() => onSelectDate(dateKey)}
+                                aria-label={`${format(day, 'MMMM d')}, ${score} of ${activeHabits.length} habits done`}
+                                aria-pressed={isSelected}
                                 style={bgStyle}
                                 className={clsx(
                                     "aspect-square flex flex-col items-center justify-center rounded-xl border text-xs transition-all relative",
@@ -167,6 +171,7 @@ export function TrackerView({ currentDate, onMonthChange, selectedDate, onSelect
                     <input
                         className="flex-1 rounded-xl border border-[#e0ddd2] bg-[#faf9f5] px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-[#a9c0ab] text-stone-800"
                         placeholder="New Habit..."
+                        aria-label="New habit name"
                         value={newHabitName}
                         onChange={e => setNewHabitName(e.target.value)}
                         onKeyDown={e => {
@@ -183,6 +188,7 @@ export function TrackerView({ currentDate, onMonthChange, selectedDate, onSelect
                                 setNewHabitName('');
                             }
                         }}
+                        aria-label="Add habit"
                         className="p-2 rounded-xl bg-[#6f8d76] hover:bg-[#5e7a65] text-white transition-colors"
                     >
                         <Plus size={16} />
@@ -195,6 +201,8 @@ export function TrackerView({ currentDate, onMonthChange, selectedDate, onSelect
                             key={c.hex}
                             type="button"
                             onClick={() => setSelectedColor(c.hex)}
+                            aria-label={`Color: ${c.name}`}
+                            aria-pressed={selectedColor === c.hex}
                             style={{ backgroundColor: c.hex }}
                             className={clsx(
                                 "w-4 h-4 rounded-full border border-[#e0ddd2] transition-transform focus:outline-none",
