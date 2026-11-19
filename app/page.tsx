@@ -6,6 +6,7 @@ import { TrackerView } from '@/components/journal/TrackerView';
 import { GoalPlanner } from '@/components/journal/GoalPlanner';
 import { JournalData, HabitDefinition, Goal } from '@/lib/types';
 import { LogOut } from 'lucide-react';
+import { format } from 'date-fns';
 import { supabase } from '@/lib/supabaseClient';
 import Auth from '@/components/auth/Auth';
 import { Session } from '@supabase/supabase-js';
@@ -172,7 +173,7 @@ export default function Home() {
   };
 
   const handleAddGoal = async (title: string) => {
-    const currentMonthStr = currentDate.toISOString().slice(0, 7);
+    const currentMonthStr = format(currentDate, 'yyyy-MM');
     const newGoal = {
       id: crypto.randomUUID(),
       title,
@@ -343,7 +344,7 @@ export default function Home() {
 
   // Right Page: Monthly Goals
   const renderRightPage = () => {
-    const currentMonthStr = currentDate.toISOString().slice(0, 7);
+    const currentMonthStr = format(currentDate, 'yyyy-MM');
     const visibleGoals = data.monthlyGoals.filter(g => g.month === currentMonthStr || !g.month); // !g.month for backwards compat
 
     return (
