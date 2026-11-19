@@ -32,13 +32,17 @@ export default function Home() {
     const r = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${r}`;
   });
-  const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
+  // The user whose journal is currently in `data`; lags behind the session while a fetch is in flight.
+  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [fetchError, setFetchError] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const userId = session?.user.id ?? null;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setLoading(false);
+      setAuthReady(true);
     });
 
     const {
@@ -56,24 +60,28 @@ export default function Home() {
 
 
 
-  // Fetch from Supabase on session change
+  // Fetch when the signed-in user changes. Keyed on the user id, not the session
+  // object, so hourly token refreshes don't reload the whole journal.
   useEffect(() => {
-    if (session?.user) {
-      setLoading(true);
-      setFetchError(false);
-      fetchJournalData(session.user.id)
-        .then(fetchedData => {
-          setData(fetchedData);
-        })
-        .catch(err => {
-          console.error('Failed to load data:', err?.message ?? err);
-          setFetchError(true);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
-  }, [session]);
+    if (!userId) return;
+    let cancelled = false;
+    fetchJournalData(userId)
+      .then(fetchedData => {
+        if (cancelled) return;
+        setData(fetchedData);
+        setLoadedUserId(userId);
+      })
+      .catch(err => {
+        if (cancelled) return;
+        console.error('Failed to load data:', err?.message ?? err);
+        setFetchError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, reloadKey]);
+
+  const loading = !authReady || (userId !== null && userId !== loadedUserId && !fetchError);
 
   if (loading) {
     return (
@@ -92,7 +100,10 @@ export default function Home() {
       <div className="flex flex-col items-center justify-center min-h-screen bg-[#f4f3ee] gap-4 px-6 text-center">
         <p className="text-stone-600">Couldn&apos;t load your data. Check your connection and try again.</p>
         <button
-          onClick={() => setSession(s => (s ? { ...s } : s))}
+          onClick={() => {
+            setFetchError(false);
+            setReloadKey(k => k + 1);
+          }}
           className="px-4 py-2 rounded-xl bg-[#6f8d76] text-white text-sm font-semibold hover:bg-[#5e7a65] transition-colors"
         >
           Retry
