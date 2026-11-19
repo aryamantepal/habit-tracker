@@ -1,24 +1,37 @@
 import { supabase } from './supabaseClient';
-import { JournalData, HabitDefinition, Completion, Goal } from './types';
+import { JournalData, HabitDefinition, Goal } from './types';
+
+const PAGE_SIZE = 1000;
 
 export const fetchJournalData = async (userId: string): Promise<JournalData> => {
-    // Fetch Habits (including archived ones)
-    const { data: habits, error: habitsError } = await supabase
-        .from('habits')
-        .select('*')
-        .eq('user_id', userId);
+    type CompletionRow = { id: string; habit_id: string; date: string };
 
-    // Fetch Completions
-    const { data: completions, error: completionsError } = await supabase
-        .from('completions')
-        .select('*')
-        .eq('user_id', userId);
+    // PostgREST caps each response (1000 rows by default), so page through completions.
+    const fetchAllCompletions = async (): Promise<{ data: CompletionRow[]; error: Error | null }> => {
+        const rows: CompletionRow[] = [];
+        for (let from = 0; ; from += PAGE_SIZE) {
+            const { data, error } = await supabase
+                .from('completions')
+                .select('id, habit_id, date')
+                .eq('user_id', userId)
+                .order('id')
+                .range(from, from + PAGE_SIZE - 1);
+            if (error) return { data: rows, error };
+            rows.push(...(data as CompletionRow[]));
+            if (data.length < PAGE_SIZE) return { data: rows, error: null };
+        }
+    };
 
-    // Fetch Monthly Goals
-    const { data: goals, error: goalsError } = await supabase
-        .from('monthly_goals')
-        .select('*')
-        .eq('user_id', userId);
+    const [
+        { data: habits, error: habitsError },
+        { data: completions, error: completionsError },
+        { data: goals, error: goalsError },
+    ] = await Promise.all([
+        // Habits (including archived ones)
+        supabase.from('habits').select('*').eq('user_id', userId),
+        fetchAllCompletions(),
+        supabase.from('monthly_goals').select('*').eq('user_id', userId),
+    ]);
 
     const error = habitsError ?? completionsError ?? goalsError;
     if (error) {
@@ -34,7 +47,7 @@ export const fetchJournalData = async (userId: string): Promise<JournalData> => 
             createdAt: h.created_at || new Date().toISOString(),
             archivedAt: h.archived_at || null
         })),
-        completions: (completions as { id: string; habit_id: string; date: string }[] || []).map(c => ({
+        completions: completions.map(c => ({
             id: c.id,
             habitId: c.habit_id,
             date: c.date
