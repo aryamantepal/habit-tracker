@@ -208,6 +208,8 @@ export function GoalPlanner({
                                                         onClick={() => {
                                                             onUpdateHabit(habit.id, { color: c.hex });
                                                         }}
+                                                        aria-label={`Color: ${c.name}`}
+                                                        aria-pressed={habitColor === c.hex}
                                                         style={{ backgroundColor: c.hex }}
                                                         className={clsx(
                                                             "w-4 h-4 rounded-full border border-[#e0ddd2] transition-transform focus:outline-none",
@@ -226,6 +228,7 @@ export function GoalPlanner({
                                         <button
                                             disabled={isFutureSelected}
                                             onClick={() => onToggleCompletion(habit.id, selectedDate)}
+                                            aria-pressed={isDone}
                                             className="flex items-center gap-3 min-w-0 pr-2 flex-1 text-left focus:outline-none group/btn"
                                         >
                                             <span
@@ -259,6 +262,7 @@ export function GoalPlanner({
                                             onClick={() => startEditingHabit(habit)}
                                             className="p-1 hover:text-[#6f8d76] text-stone-400 transition-colors"
                                             title="Edit Name & Color"
+                                            aria-label={`Edit ${habit.name}`}
                                         >
                                             <Pencil size={13} />
                                         </button>
@@ -270,6 +274,7 @@ export function GoalPlanner({
                                             }}
                                             className="p-1 hover:text-amber-600 text-stone-400 transition-colors"
                                             title="Archive"
+                                            aria-label={`Archive ${habit.name}`}
                                         >
                                             <Archive size={13} />
                                         </button>
@@ -281,6 +286,7 @@ export function GoalPlanner({
                                             }}
                                             className="p-1 hover:text-red-500 text-stone-400 transition-colors"
                                             title="Delete"
+                                            aria-label={`Delete ${habit.name}`}
                                         >
                                             <Trash2 size={13} />
                                         </button>
@@ -296,6 +302,7 @@ export function GoalPlanner({
                     <input
                         type="text"
                         placeholder="Add a new habit..."
+                        aria-label="New habit name"
                         value={newHabitName}
                         onChange={e => setNewHabitName(e.target.value)}
                         className="flex-1 rounded-xl border border-[#e0ddd2] bg-white px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#a9c0ab] text-stone-800 font-medium"
@@ -356,6 +363,9 @@ export function GoalPlanner({
                         <li key={goal.id} className="group flex items-start gap-2.5 relative">
                             <button
                                 onClick={() => onToggleGoal(goal.id)}
+                                role="checkbox"
+                                aria-checked={goal.completed}
+                                aria-label={goal.title}
                                 className={clsx(
                                     "mt-1 flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded border transition-all",
                                     goal.completed
@@ -391,6 +401,7 @@ export function GoalPlanner({
                             </div>
                             <button
                                 onClick={() => onDeleteGoal(goal.id)}
+                                aria-label={`Delete goal: ${goal.title}`}
                                 className="p-0.5 text-stone-400 hover:text-red-500 shrink-0 transition-colors"
                             >
                                 <Trash2 size={12} />
@@ -412,10 +423,12 @@ export function GoalPlanner({
                         onChange={(e) => setNewGoalTitle(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && handleAddGoalSubmit()}
                         placeholder="Add goal..."
+                        aria-label="New goal"
                         className="flex-1 rounded-xl border border-[#e0ddd2] bg-[#faf9f5] px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-[#a9c0ab] text-stone-800"
                     />
                     <button
                         onClick={handleAddGoalSubmit}
+                        aria-label="Add goal"
                         className="p-1.5 rounded-xl bg-[#6f8d76] hover:bg-[#5e7a65] text-white transition-colors"
                     >
                         <Plus size={14} />
@@ -437,6 +450,7 @@ export function GoalPlanner({
                                     onClick={() => onUpdateHabit(habit.id, { archivedAt: null })}
                                     className="text-stone-400 hover:text-[#6f8d76] transition-colors"
                                     title="Restore"
+                                    aria-label={`Restore ${habit.name}`}
                                 >
                                     <RotateCcw size={11} />
                                 </button>
