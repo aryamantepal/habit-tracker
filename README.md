@@ -1,6 +1,6 @@
 # Habit Tracker
 
-A notebook-style habit journal built with Next.js, React, TypeScript, and Supabase. Track daily completions in a monthly grid, manage a daily checklist, and plan monthly goals. Email/password accounts keep each user's journal in Supabase.
+A notebook-style habit journal built with Next.js, React, and TypeScript. Track daily completions in a monthly grid, manage a daily checklist, and plan monthly goals. There are no accounts and no backend: everything is saved in your browser's localStorage.
 
 ## Local setup
 
@@ -8,24 +8,23 @@ Use Node.js compatible with the Next.js version in `package.json` and npm. Run c
 
 ```sh
 npm ci
-```
-
-Create a Supabase project, enable email/password sign-in, and run [supabase_schema.sql](supabase_schema.sql) in its SQL editor. It creates `habits`, `completions`, and `monthly_goals` with row-level security. The policy statements are intended for initial setup; rerunning them against existing policies requires adjustment.
-
-Create `.env.local` with your project's public client credentials:
-
-```dotenv
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
-```
-
-The client throws an error if either variable is missing. Use the public anon key, never a service-role key. Configure Supabase's authentication URLs for your local/deployed site and complete email verification if enabled.
-
-```sh
 npm run dev
 ```
 
-Open http://localhost:3000, create an account, and add your first habit. New journals start empty.
+Open http://localhost:3000 and add your first habit. New journals start empty. No environment variables are needed.
+
+## Data storage
+
+The journal is stored as JSON under the `lockin-journal-v1` localStorage key and saved on every change. The app asks the browser for persistent storage on load (best effort).
+
+Use the Export button (top right) to download a dated `.json` backup, and the Import button to restore one. Import replaces all current data after a confirmation.
+
+Trade-offs:
+
+- No cross-device or cross-browser sync. Each browser profile has its own journal; move data between them with export and import.
+- Clearing site data erases the journal. Export a backup first.
+- Safari may evict site data after 7 days without a visit, unless the site is installed to the Home Screen or Dock.
+- Private browsing windows may not keep data after they close.
 
 ## Commands
 
@@ -36,15 +35,13 @@ Open http://localhost:3000, create an account, and add your first habit. New jou
 | `npm run build` | Create a production build |
 | `npm start` | Serve the production build |
 
-The same environment variables are needed when building and deploying.
-
 ## Code map
 
-- [app/page.tsx](app/page.tsx): session handling and journal interactions.
+- [app/page.tsx](app/page.tsx): journal state, localStorage persistence, and export/import controls.
 - [components/journal](components/journal): monthly tracker, daily checklist, and goals.
-- [components/auth/Auth.tsx](components/auth/Auth.tsx): signup and sign-in.
-- [lib/api.ts](lib/api.ts): Supabase reads and writes.
+- [lib/storage.ts](lib/storage.ts): localStorage load/save, export, and import parsing.
 - [lib/types.ts](lib/types.ts): journal data types.
-- [docs](docs): implementation notes and walkthroughs.
+- [app/privacy/page.tsx](app/privacy/page.tsx): privacy policy.
+- [docs](docs): implementation notes and walkthroughs (written when the app used Supabase).
 
 There is no automated test script in `package.json`. A useful manual check is to create a habit, toggle a completion, add a monthly goal, and reload to confirm persistence.

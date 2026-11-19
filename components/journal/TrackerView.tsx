@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay, isToday } from 'date-fns';
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths, getDay } from 'date-fns';
 import { clsx } from 'clsx';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { JournalData, PRESET_COLORS } from '@/lib/types';
